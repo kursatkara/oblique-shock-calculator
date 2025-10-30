@@ -14,13 +14,23 @@ function thetaBetaEq(beta, M1, thetaRad) {
 // Solve for weak-shock β using bisection
 function solveBetaWeak(M1, thetaDeg) {
   const thetaRad = (thetaDeg * Math.PI) / 180;
-  let betaLo = thetaRad + 1e-6;
+
+  // lower and upper search limits for β
+  let betaLo = thetaRad + 0.01;       // small offset above θ
   let betaHi = Math.PI / 2 - 1e-6;
+
+  // if fLo and fHi same sign, gradually move betaLo up
   let fLo = thetaBetaEq(betaLo, M1, thetaRad);
   let fHi = thetaBetaEq(betaHi, M1, thetaRad);
-  if (fLo * fHi > 0) return null;
+  while (fLo * fHi > 0 && betaLo < betaHi - 0.001) {
+    betaLo += 0.01;
+    fLo = thetaBetaEq(betaLo, M1, thetaRad);
+  }
 
-  for (let i = 0; i < 100; i++) {
+  if (fLo * fHi > 0) return null; // still no sign change → detached
+
+  // bisection
+  for (let i = 0; i < 200; i++) {
     const betaMid = 0.5 * (betaLo + betaHi);
     const fMid = thetaBetaEq(betaMid, M1, thetaRad);
     if (fLo * fMid <= 0) {
