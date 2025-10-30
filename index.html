@@ -10,6 +10,7 @@
   <main>
     <h1>Oblique Shock Calculator</h1>
 
+    <!-- Input Section -->
     <section class="input-section">
       <label for="M1">Mach number M₁</label>
       <input type="number" id="M1" step="0.1" value="2.5" min="1.01" />
@@ -18,51 +19,48 @@
       <input type="number" id="theta" step="0.1" value="20" min="0.1" max="40" />
 
       <button id="computeBtn">Compute</button>
-
       <p id="warning" class="warning"></p>
     </section>
 
+    <!-- Results Section -->
     <section class="results">
       <h2>Results</h2>
-      <p>Shock angle β: <span id="beta">–</span>°</p>
-      <p>Downstream Mach number M₂: <span id="M2">–</span></p>
-      <p>Pressure ratio p₂/p₁: <span id="p2p1">–</span></p>
-      <p>Temperature ratio T₂/T₁: <span id="T2T1">–</span></p>
-      <p>Density ratio ρ₂/ρ₁: <span id="rho2rho1">–</span></p>
+      <div class="results-table">
+        <div class="row"><div class="label">Shock angle β (°)</div><div class="value" id="beta">–</div></div>
+        <div class="row"><div class="label">Downstream Mach number M₂</div><div class="value" id="M2">–</div></div>
+        <div class="row"><div class="label">Pressure ratio p₂/p₁</div><div class="value" id="p2p1">–</div></div>
+        <div class="row"><div class="label">Temperature ratio T₂/T₁</div><div class="value" id="T2T1">–</div></div>
+        <div class="row"><div class="label">Density ratio ρ₂/ρ₁</div><div class="value" id="rho2rho1">–</div></div>
+      </div>
     </section>
 
+    <!-- Diagram Section -->
     <section class="diagram-section">
       <h2>Wave Geometry</h2>
-
-      <!-- SVG diagram -->
-      <svg id="shockDiagram" width="320" height="200" viewBox="0 0 320 200">
-        <!-- Incoming flow arrow -->
-        <line x1="10" y1="160" x2="140" y2="160" stroke="#444" stroke-width="2" marker-end="url(#arrow)" />
-        <text x="20" y="150" font-size="12" fill="#444">M₁</text>
+      <svg id="shockDiagram" width="640" height="400" viewBox="0 0 640 400">
+        <line x1="20" y1="320" x2="280" y2="320" stroke="#444" stroke-width="3" marker-end="url(#arrow)" />
+        <text x="40" y="300" font-size="18" fill="#444">M₁</text>
 
         <!-- Wedge -->
-        <line id="wedgeBase" x1="140" y1="160" x2="220" y2="160" stroke="#004080" stroke-width="4" />
-        <line id="wedgeRamp" x1="140" y1="160" x2="220" y2="140" stroke="#004080" stroke-width="4" />
+        <line id="wedgeBase" x1="280" y1="320" x2="460" y2="320" stroke="#004080" stroke-width="6" />
+        <line id="wedgeRamp" x1="280" y1="320" x2="460" y2="280" stroke="#004080" stroke-width="6" />
 
-        <!-- Shock line -->
-        <line id="shockLine" x1="140" y1="160" x2="260" y2="80" stroke="#cc0000" stroke-width="3" />
+        <!-- Shock -->
+        <line id="shockLine" x1="280" y1="320" x2="520" y2="160" stroke="#cc0000" stroke-width="4" />
 
-        <!-- θ arc and label -->
-        <path id="thetaArc" d="" stroke="#004080" stroke-width="2" fill="none" />
-        <text id="thetaLabel" x="0" y="0" font-size="12" fill="#004080">θ</text>
+        <!-- θ and β arcs -->
+        <path id="thetaArc" d="" stroke="#004080" stroke-width="2.5" fill="none" />
+        <text id="thetaLabel" x="0" y="0" font-size="16" fill="#004080">θ</text>
 
-        <!-- β arc and label -->
-        <path id="betaArc" d="" stroke="#cc0000" stroke-width="2" fill="none" />
-        <text id="betaLabel" x="0" y="0" font-size="12" fill="#cc0000">β</text>
+        <path id="betaArc" d="" stroke="#cc0000" stroke-width="2.5" fill="none" />
+        <text id="betaLabel" x="0" y="0" font-size="16" fill="#cc0000">β</text>
 
-        <!-- arrowhead -->
         <defs>
-          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-            <polygon points="0,0 8,4 0,8" fill="#444" />
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
+            <polygon points="0,0 10,5 0,10" fill="#444" />
           </marker>
         </defs>
       </svg>
-
       <p class="diagram-caption">
         Geometry: β is the shock angle (between shock and upstream flow), θ is the wedge deflection angle.
       </p>
@@ -73,7 +71,6 @@
     </footer>
   </main>
 
-  <!-- Link to JavaScript -->
   <script src="script.js"></script>
 </body>
 </html>
