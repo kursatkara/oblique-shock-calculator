@@ -1,57 +1,34 @@
-// ----- Constants -----
+// ------------------------------------------------------------
+// Oblique Shock Calculator
+// Analytical theta–beta–Mach solution (Rudd & Lewis, 1998)
+// ------------------------------------------------------------
+
 const gamma = 1.4;
 
-// θ–β–M equation for attached oblique shock
-function thetaBetaEq(beta, M1, thetaRad) {
-  const sinB = Math.sin(beta);
-  const cosB = Math.cos(beta);
-  const num = M1 ** 2 * sinB ** 2 - 1;
-  const den = M1 ** 2 * (gamma + Math.cos(2 * beta)) + 2;
-  const rhs = 2 * (1 / Math.tan(beta)) * (num / den);
-  return rhs - Math.tan(thetaRad);
-}
-
-// Solve for weak-shock β using bisection
-function solveBetaWeak(M1, thetaDeg) {
+// Analytical θ–β–M relation (Rudd & Lewis 1998, AIAA J. Aircraft, 35(4))
+// n = 0 → weak shock, n = 1 → strong shock
+function betaAnalytical(M1, thetaDeg, gamma = 1.4, n = 0) {
   const theta = (thetaDeg * Math.PI) / 180;
+  const mu = Math.asin(1 / M1);
+  const c = Math.tan(mu) ** 2;
+  const a = ((gamma - 1) / 2 + ((gamma + 1) / 2) * c) * Math.tan(theta);
+  const b = ((gamma + 1) / 2 + ((gamma + 3) / 2) * c) * Math.tan(theta);
+  const numerator = 4 * (1 - 3 * a * b) ** 3;
+  const denominator = (27 * a * a * c + 9 * a * b - 2) ** 2;
+  const d = Math.sqrt(numerator / denominator - 1);
 
-  // lower limit a little above theta
-  let betaLo = theta + 1e-3;
-  // upper limit well below 90° but not too close
-  let betaHi = (Math.PI / 2) - 1e-3;
+  const term1 = (b + 9 * a * c) / (2 * (1 - 3 * a * b));
+  const term2 =
+    (d * (27 * a * a * c + 9 * a * b - 2)) /
+    (6 * a * (1 - 3 * a * b));
 
-  // evaluate function at bounds
-  let fLo = thetaBetaEq(betaLo, M1, theta);
-  let fHi = thetaBetaEq(betaHi, M1, theta);
+  const angle = n * Math.PI / 3 + (1 / 3) * Math.atan(1 / d);
+  const betaRad = Math.atan(term1 - term2 * Math.tan(angle));
 
-  // --- ensure we start near weak branch ---
-  // for supersonic M1, the function near β≈θ is negative and crosses zero twice;
-  // weak shock root is the first one where f changes sign from - to +
-  while (fLo * fHi > 0 && betaLo < betaHi) {
-    betaLo += 0.001; // widen slightly upward until sign change
-    fLo = thetaBetaEq(betaLo, M1, theta);
-  }
-
-  if (fLo * fHi > 0) return null; // detached
-
-  // bisection loop
-  for (let i = 0; i < 200; i++) {
-    const betaMid = 0.5 * (betaLo + betaHi);
-    const fMid = thetaBetaEq(betaMid, M1, theta);
-    if (fLo * fMid <= 0) {
-      betaHi = betaMid;
-      fHi = fMid;
-    } else {
-      betaLo = betaMid;
-      fLo = fMid;
-    }
-  }
-
-  return 0.5 * (betaLo + betaHi);
+  return betaRad; // radians
 }
 
-
-// Compute post-shock relations
+// Compute post-shock flow properties
 function obliqueShockRelations(M1, beta, theta) {
   const Mn1 = M1 * Math.sin(beta);
   const p2p1 = 1 + (2 * gamma / (gamma + 1)) * (Mn1 ** 2 - 1);
@@ -65,7 +42,7 @@ function obliqueShockRelations(M1, beta, theta) {
   return { p2p1, rho2rho1, T2T1, M2 };
 }
 
-// Draw SVG arc between angles
+// Utility: create SVG arc for labeling θ and β
 function arcPath(cx, cy, r, a1, a2) {
   const x1 = cx + r * Math.cos(a1);
   const y1 = cy - r * Math.sin(a1);
@@ -76,7 +53,7 @@ function arcPath(cx, cy, r, a1, a2) {
   return `M ${x1.toFixed(1)},${y1.toFixed(1)} A ${r},${r} 0 ${largeArcFlag} ${sweepFlag} ${x2.toFixed(1)},${y2.toFixed(1)}`;
 }
 
-// Update wedge/shock diagram
+// Update the wedge–shock diagram dynamically
 function updateDiagram(thetaDeg, betaDeg) {
   const wedgeRamp = document.getElementById("wedgeRamp");
   const shockLine = document.getElementById("shockLine");
@@ -89,28 +66,24 @@ function updateDiagram(thetaDeg, betaDeg) {
   const thetaRad = (thetaDeg * Math.PI) / 180;
   const betaRad = (betaDeg * Math.PI) / 180;
 
-  // wedge line
   const Lw = 80;
   const xW = x0 + Lw * Math.cos(thetaRad);
   const yW = y0 - Lw * Math.sin(thetaRad);
   wedgeRamp.setAttribute("x2", xW);
   wedgeRamp.setAttribute("y2", yW);
 
-  // shock line
   const Ls = 130;
   const xS = x0 + Ls * Math.cos(betaRad);
   const yS = y0 - Ls * Math.sin(betaRad);
   shockLine.setAttribute("x2", xS);
   shockLine.setAttribute("y2", yS);
 
-  // θ arc and label
   const rT = 28;
   thetaArc.setAttribute("d", arcPath(x0, y0, rT, 0, thetaRad));
   thetaLabel.setAttribute("x", x0 + (rT + 12) * Math.cos(thetaRad / 2));
   thetaLabel.setAttribute("y", y0 - (rT + 12) * Math.sin(thetaRad / 2));
   thetaLabel.textContent = `θ=${thetaDeg.toFixed(1)}°`;
 
-  // β arc and label
   const rB = 44;
   betaArc.setAttribute("d", arcPath(x0, y0, rB, 0, betaRad));
   betaLabel.setAttribute("x", x0 + (rB + 12) * Math.cos(betaRad / 2));
@@ -118,7 +91,7 @@ function updateDiagram(thetaDeg, betaDeg) {
   betaLabel.textContent = `β=${betaDeg.toFixed(1)}°`;
 }
 
-// Compute results and update UI
+// Main calculation and update
 function calculate() {
   const M1 = parseFloat(document.getElementById("M1").value);
   const thetaDeg = parseFloat(document.getElementById("theta").value);
@@ -129,18 +102,19 @@ function calculate() {
     return;
   }
 
-  const beta = solveBetaWeak(M1, thetaDeg);
-  if (beta === null) {
+  const betaRad = betaAnalytical(M1, thetaDeg, gamma, 0); // weak shock
+  const betaDeg = betaRad * 180 / Math.PI;
+
+  if (isNaN(betaRad) || betaDeg <= thetaDeg || betaDeg >= 90) {
     warning.textContent = "No attached weak oblique shock for this (M₁, θ).";
     updateDiagram(thetaDeg, thetaDeg);
     return;
   }
+
   warning.textContent = "";
 
-  const theta = (thetaDeg * Math.PI) / 180;
-  const betaDeg = (beta * 180) / Math.PI;
-
-  const { p2p1, rho2rho1, T2T1, M2 } = obliqueShockRelations(M1, beta, theta);
+  const thetaRad = thetaDeg * Math.PI / 180;
+  const { p2p1, rho2rho1, T2T1, M2 } = obliqueShockRelations(M1, betaRad, thetaRad);
 
   document.getElementById("beta").textContent = betaDeg.toFixed(6);
   document.getElementById("M2").textContent = M2.toFixed(6);
