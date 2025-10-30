@@ -50,6 +50,7 @@ function solveBetaWeak(M1, thetaDeg) {
   return 0.5 * (betaLo + betaHi);
 }
 
+
 // Compute post-shock relations
 function obliqueShockRelations(M1, beta, theta) {
   const Mn1 = M1 * Math.sin(beta);
