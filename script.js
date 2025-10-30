@@ -116,11 +116,12 @@ function calculate() {
   const thetaRad = thetaDeg * Math.PI / 180;
   const { p2p1, rho2rho1, T2T1, M2 } = obliqueShockRelations(M1, betaRad, thetaRad);
 
-  document.getElementById("beta").textContent = betaDeg.toFixed(6);
-  document.getElementById("M2").textContent = M2.toFixed(6);
-  document.getElementById("p2p1").textContent = p2p1.toFixed(6);
-  document.getElementById("T2T1").textContent = T2T1.toFixed(6);
-  document.getElementById("rho2rho1").textContent = rho2rho1.toFixed(6);
+  // Display results with requested precision
+  document.getElementById("beta").textContent = betaDeg.toFixed(2);
+  document.getElementById("M2").textContent = M2.toFixed(4);
+  document.getElementById("p2p1").textContent = p2p1.toFixed(4);
+  document.getElementById("T2T1").textContent = T2T1.toFixed(4);
+  document.getElementById("rho2rho1").textContent = rho2rho1.toFixed(4);
 
   updateDiagram(thetaDeg, betaDeg);
 }
