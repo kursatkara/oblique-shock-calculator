@@ -13,26 +13,31 @@ function thetaBetaEq(beta, M1, thetaRad) {
 
 // Solve for weak-shock β using bisection
 function solveBetaWeak(M1, thetaDeg) {
-  const thetaRad = (thetaDeg * Math.PI) / 180;
+  const theta = (thetaDeg * Math.PI) / 180;
 
-  // lower and upper search limits for β
-  let betaLo = thetaRad + 0.01;       // small offset above θ
-  let betaHi = Math.PI / 2 - 1e-6;
+  // lower limit a little above theta
+  let betaLo = theta + 1e-3;
+  // upper limit well below 90° but not too close
+  let betaHi = (Math.PI / 2) - 1e-3;
 
-  // if fLo and fHi same sign, gradually move betaLo up
-  let fLo = thetaBetaEq(betaLo, M1, thetaRad);
-  let fHi = thetaBetaEq(betaHi, M1, thetaRad);
-  while (fLo * fHi > 0 && betaLo < betaHi - 0.001) {
-    betaLo += 0.01;
-    fLo = thetaBetaEq(betaLo, M1, thetaRad);
+  // evaluate function at bounds
+  let fLo = thetaBetaEq(betaLo, M1, theta);
+  let fHi = thetaBetaEq(betaHi, M1, theta);
+
+  // --- ensure we start near weak branch ---
+  // for supersonic M1, the function near β≈θ is negative and crosses zero twice;
+  // weak shock root is the first one where f changes sign from - to +
+  while (fLo * fHi > 0 && betaLo < betaHi) {
+    betaLo += 0.001; // widen slightly upward until sign change
+    fLo = thetaBetaEq(betaLo, M1, theta);
   }
 
-  if (fLo * fHi > 0) return null; // still no sign change → detached
+  if (fLo * fHi > 0) return null; // detached
 
-  // bisection
+  // bisection loop
   for (let i = 0; i < 200; i++) {
     const betaMid = 0.5 * (betaLo + betaHi);
-    const fMid = thetaBetaEq(betaMid, M1, thetaRad);
+    const fMid = thetaBetaEq(betaMid, M1, theta);
     if (fLo * fMid <= 0) {
       betaHi = betaMid;
       fHi = fMid;
@@ -41,6 +46,7 @@ function solveBetaWeak(M1, thetaDeg) {
       fLo = fMid;
     }
   }
+
   return 0.5 * (betaLo + betaHi);
 }
 
