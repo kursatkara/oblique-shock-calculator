@@ -2,36 +2,26 @@
 // === Constants & Helpers ================================================
 // ========================================================================
 
-// Get global gamma value from input
 function getGamma() {
   return parseFloat(document.getElementById("gamma").value) || 1.4;
 }
 
-// Convert degrees to radians
-function deg2rad(deg) {
-  return (deg * Math.PI) / 180;
-}
+function deg2rad(deg) { return (deg * Math.PI) / 180; }
+function rad2deg(rad) { return (rad * 180) / Math.PI; }
 
-// Convert radians to degrees
-function rad2deg(rad) {
-  return (rad * 180) / Math.PI;
-}
-
-// Generic numerical solver
 function newtonRaphson(func, deriv, guess, target, g, maxIter = 50, tol = 1e-9) {
   let x = guess;
   for (let i = 0; i < maxIter; i++) {
     const f = func(x, g) - target;
-    if (Math.abs(f) < tol) return x; // Converged
+    if (Math.abs(f) < tol) return x;
     const df = deriv(x, g);
-    if (Math.abs(df) < 1e-15) break; // Avoid division by zero
+    if (Math.abs(df) < 1e-15) break;
     x = x - f / df;
-    if (x < 0) x = tol; // Prevent negative Mach numbers
+    if (x < 0) x = tol;
   }
-  return NaN; // Failed to converge
+  return NaN;
 }
 
-// Helper to update a DOM element's text (value or text content)
 function updateText(id, value, precision = 4) {
   const el = document.getElementById(id);
   if (el) {
@@ -44,43 +34,45 @@ function updateText(id, value, precision = 4) {
   }
 }
 
-// Helper to set element visibility
 function setVisible(id, visible) {
   const el = document.getElementById(id);
-  if (el) {
-    el.style.display = visible ? "block" : "none";
-  }
+  if (el) { el.style.display = visible ? "block" : "none"; }
 }
 
-// Helper to create SVG arc paths (for y-down coordinate system)
 function arcPath(cx, cy, r, a1, a2) {
   const x1 = cx + r * Math.cos(a1);
   const y1 = cy - r * Math.sin(a1);
   const x2 = cx + r * Math.cos(a2);
   const y2 = cy - r * Math.sin(a2);
-  // Using '0 0 0' for (large-arc-flag, sweep-flag, x-axis-rotation)
   return `M ${x1},${y1} A ${r},${r} 0 0 0 ${x2},${y2}`;
 }
 
+// *** NEW *** Helper for flashing new results
+function flashResults(panelId) {
+    const results = document.querySelectorAll(`#${panelId}-calculator .results .value`);
+    results.forEach(el => {
+        el.classList.remove('is-new-result');
+        // Trigger reflow
+        void el.offsetWidth;
+        el.classList.add('is-new-result');
+        setTimeout(() => {
+            el.classList.remove('is-new-result');
+        }, 800); // Animation duration
+    });
+}
 
 // ========================================================================
 // === Gas Dynamics Models (The "Math") ===================================
 // ========================================================================
 
-// --- 1. Isentropic Flow ---
 const isentropic = {
-  // Ratios from M (Total-to-Static)
   T0_T: (M, g) => (1 + (g - 1) / 2 * M ** 2),
   p0_p: (M, g) => (1 + (g - 1) / 2 * M ** 2) ** (g / (g - 1)),
   rho0_rho: (M, g) => (1 + (g - 1) / 2 * M ** 2) ** (1 / (g - 1)),
   A_Astar: (M, g) => (1 / M) * (((1 + (g - 1) / 2 * M ** 2)) / ((g + 1) / 2)) ** ((g + 1) / (2 * (g - 1))),
-
-  // M from Ratios
   M_from_T: (T0_T, g) => Math.sqrt((T0_T - 1) * 2 / (g - 1)),
   M_from_p: (p0_p, g) => Math.sqrt(((p0_p) ** ((g - 1) / g) - 1) * 2 / (g - 1)),
   M_from_rho: (rho0_rho, g) => Math.sqrt(((rho0_rho) ** (g - 1) - 1) * 2 / (g - 1)),
-
-  // A/A* inversion (needs solver)
   A_Astar_func: (M, g) => isentropic.A_Astar(M, g),
   A_Astar_deriv: (M, g) => {
     return isentropic.A_Astar(M, g) * (M ** 2 - 1) / (M * (1 + (g - 1) / 2 * M ** 2));
@@ -93,7 +85,6 @@ const isentropic = {
   }
 };
 
-// --- 2. Normal Shock ---
 function normalShockRatios(M1, g) {
   if (M1 <= 1) return {};
   const M1_sq = M1 ** 2;
@@ -110,7 +101,6 @@ function normalShockRatios(M1, g) {
   return { M1, M2, p2p1, rho2rho1, T2T1, p02p01, p02p1 };
 }
 
-// Inverse Normal Shock Functions
 const normalShockInverse = {
   M1_from_M2: (M2, g) => {
     if (M2 <= 0) return NaN;
@@ -135,19 +125,14 @@ const normalShockInverse = {
     if (T2T1 <= 1) return NaN;
     const gp1 = g + 1;
     const gm1 = g - 1;
-    
     const a = 2 * g * gm1;
     const b = (4 * g - gm1**2 - gp1**2 * T2T1);
     const c = -2 * gm1;
-    
     const discriminant = b**2 - 4*a*c;
     if (discriminant < 0) return NaN;
-    
     const X1 = (-b + Math.sqrt(discriminant)) / (2*a);
     return X1 < 1 ? NaN : Math.sqrt(X1);
   },
-  
-  // For p02/p01
   p02p01_func: (M1, g) => normalShockRatios(M1, g).p02p01,
   p02p01_deriv: (M1, g) => {
     const h = 1e-6;
@@ -160,8 +145,6 @@ const normalShockInverse = {
     const guess = 1 - 2 * (p02p01 - 1);
     return newtonRaphson(normalShockInverse.p02p01_func, normalShockInverse.p02p01_deriv, guess < 1 ? 1.1 : guess, p02p01, g);
   },
-  
-  // For p02/p1
   p02p1_func: (M1, g) => normalShockRatios(M1, g).p02p1,
   p02p1_deriv: (M1, g) => {
     const h = 1e-6;
@@ -176,8 +159,6 @@ const normalShockInverse = {
   }
 };
 
-
-// --- 3. Oblique Shock (θ–β–M relation) ---
 function obliqueShockRatios(M1, beta, theta, g) {
   const Mn1 = M1 * Math.sin(beta);
   if (Mn1 <= 1) return { M1, theta: rad2deg(theta), beta: rad2deg(beta) };
@@ -189,7 +170,6 @@ function obliqueShockRatios(M1, beta, theta, g) {
   return { M1, M2, Mn1, Mn2, p2p1, rho2rho1, T2T1, p02p01, theta: rad2deg(theta), beta: rad2deg(beta) };
 }
 
-// Case 1: (M1, θ) -> β
 function ob_beta_from_M1_theta(M1, theta, g) {
   const thetaRad = deg2rad(theta);
   const mu = Math.asin(1 / M1);
@@ -205,7 +185,6 @@ function ob_beta_from_M1_theta(M1, theta, g) {
   return Math.atan(term1 - term2 * Math.tan(angle));
 }
 
-// Case 2: (M1, β) -> θ
 function ob_theta_from_M1_beta(M1, beta, g) {
   const betaRad = deg2rad(beta);
   const M1_sq = M1 ** 2;
@@ -215,27 +194,22 @@ function ob_theta_from_M1_beta(M1, beta, g) {
   return rad2deg(thetaRad);
 }
 
-// Case 3: (θ, β) -> M1
 function ob_M1_from_theta_beta(theta, beta, g) {
   const thetaRad = deg2rad(theta);
   const betaRad = deg2rad(beta);
   if (beta <= theta) return NaN;
-
   const T = Math.tan(thetaRad);
   const C = 1 / Math.tan(betaRad);
   const S2 = Math.sin(betaRad) ** 2;
   const G = g + Math.cos(2 * betaRad);
-
   const M1_sq = 2 * (C + T) / (2 * C * S2 - T * G);
   return M1_sq < 1 ? NaN : Math.sqrt(M1_sq);
 }
 
-
-// --- 4. Prandtl-Meyer Expansion ---
 const prandtlMeyer = {
   nu: (M, g) => {
     if (M < 1) return 0;
-    if (M === Infinity) { // Handle max angle case
+    if (M === Infinity) {
         const gp1 = g + 1;
         const gm1 = g - 1;
         return rad2deg(Math.sqrt(gp1 / gm1) * Math.PI / 2 - Math.PI / 2);
@@ -248,23 +222,19 @@ const prandtlMeyer = {
     const term2 = Math.sqrt(M_sq - 1);
     return rad2deg(g_ratio * Math.atan(term1) - Math.atan(term2));
   },
-
   nu_rad: (M, g) => deg2rad(prandtlMeyer.nu(M, g)),
-
   nu_deriv: (M, g) => {
     if (M <= 1) return 0;
     const M_sq = M ** 2;
     const gm1 = g - 1;
     return (Math.sqrt(M_sq - 1) / (1 + gm1 / 2 * M_sq)) * (1 / M);
   },
-
   M_from_nu: (nu_deg, g) => {
     if (nu_deg < 0) return 1;
     const gp1 = g + 1;
     const gm1 = g - 1;
     const nu_max = rad2deg(Math.sqrt(gp1 / gm1) * Math.PI / 2 - Math.PI / 2);
     if (nu_deg > nu_max) return Infinity;
-
     const nu_rad_target = deg2rad(nu_deg);
     const guess = 1.5 + (nu_deg / nu_max) * 10;
     return newtonRaphson(prandtlMeyer.nu_rad, prandtlMeyer.nu_deriv, guess, nu_rad_target, g);
@@ -284,7 +254,6 @@ function updateNormalShockDiagram(M1, M2) {
 function updateObliqueDiagram(thetaDeg, betaDeg) {
   const x0 = 280, y0 = 320;
   const Lbase = 220, Lwedge = 150;
-  
   const isValidTheta = !isNaN(thetaDeg) && thetaDeg > 0;
   const thetaRad = isValidTheta ? deg2rad(thetaDeg) : 0;
   
@@ -335,7 +304,6 @@ function calculateIsentropic() {
   const inputValue = parseFloat(document.getElementById("is-inputValue").value);
   const warning = document.getElementById("is-warning");
   warning.textContent = "";
-  
   let M = NaN, T0_T, p0_p, rho0_rho, A_Astar;
   const resultIDs = ["is-M", "is-p0_p", "is-rho0_rho", "is-T0_T", "is-A_Astar"];
 
@@ -368,18 +336,15 @@ function calculateIsentropic() {
         break;
     }
     if (isNaN(M)) throw new Error("Calculation failed. Check inputs or solver failed.");
-    
-    // Calculate all other values from M
     T0_T = isentropic.T0_T(M, g);
     p0_p = isentropic.p0_p(M, g);
     rho0_rho = isentropic.rho0_rho(M, g);
     A_Astar = isentropic.A_Astar(M, g);
-
+    flashResults("isentropic");
   } catch (err) {
     warning.textContent = err.message;
     clearResults("is", resultIDs.map(id => id.split('-')[1]));
   }
-
   updateText("is-M", M);
   updateText("is-p0_p", p0_p);
   updateText("is-rho0_rho", rho0_rho);
@@ -394,7 +359,6 @@ function calculateNormalShock() {
   const inputValue = parseFloat(document.getElementById("ns-inputValue").value);
   const warning = document.getElementById("ns-warning");
   warning.textContent = "";
-
   let M1 = NaN;
   const resultIDs = ["M1", "M2", "p2p1", "rho2rho1", "T2T1", "p02p01", "p02p1"];
   
@@ -429,11 +393,9 @@ function calculateNormalShock() {
         if (isNaN(M1)) throw new Error("Invalid p₀₂/p₁. Must be > 1.");
         break;
     }
-    
     if (isNaN(M1) || M1 <= 1) throw new Error("Calculation failed. Ensure input is in a valid range.");
     
     const { M2, p2p1, rho2rho1, T2T1, p02p01, p02p1 } = normalShockRatios(M1, g);
-    
     updateText("ns-M1", M1);
     updateText("ns-M2", M2);
     updateText("ns-p2p1", p2p1);
@@ -442,7 +404,7 @@ function calculateNormalShock() {
     updateText("ns-p02p01", p02p01);
     updateText("ns-p02p1", p02p1);
     updateNormalShockDiagram(M1, M2);
-
+    flashResults("normal-shock");
   } catch (err) {
     warning.textContent = err.message;
     clearResults("ns", resultIDs);
@@ -451,6 +413,15 @@ function calculateNormalShock() {
 }
 
 // --- 3. Oblique Shock Controller ---
+function clearObliqueInputs() {
+    const inputs = ["ob-M1", "ob-theta", "ob-beta"];
+    inputs.forEach(id => {
+        document.getElementById(id).value = "";
+        document.getElementById(id).classList.remove("is-calculated-input");
+    });
+    document.getElementById("ob-warning").textContent = "";
+}
+
 function calculateObliqueShock() {
   const g = getGamma();
   const M1_in = parseFloat(document.getElementById("ob-M1").value);
@@ -458,15 +429,18 @@ function calculateObliqueShock() {
   const beta_in = parseFloat(document.getElementById("ob-beta").value);
   const warning = document.getElementById("ob-warning");
   warning.textContent = "";
+  
+  // Clear all previous calculated styles
+  const allInputs = [document.getElementById("ob-M1"), document.getElementById("ob-theta"), document.getElementById("ob-beta")];
+  allInputs.forEach(el => el.classList.remove("is-calculated-input"));
 
   const resultIDs = ["M1n", "M2n", "M2", "p2p1", "rho2rho1", "T2T1", "p02p01"];
   let M1 = M1_in, theta = theta_in, beta = beta_in;
-  let betaRad, thetaRad;
+  let betaRad, thetaRad, calculatedField = "";
 
   try {
     const inputs = [!isNaN(M1), !isNaN(theta), !isNaN(beta)];
     const inputCount = inputs.filter(Boolean).length;
-
     if (inputCount !== 2) {
       throw new Error("Please provide exactly two inputs (M₁, θ, or β).");
     }
@@ -478,7 +452,7 @@ function calculateObliqueShock() {
       beta = rad2deg(betaRad);
       if (isNaN(beta)) throw new Error("No attached shock solution (θ > θ_max).");
       thetaRad = deg2rad(theta);
-
+      calculatedField = "ob-beta";
     } else if (!isNaN(M1) && !isNaN(beta)) { // Case 2: (M1, β) -> θ
       if (M1 <= 1) throw new Error("M₁ must be > 1.");
       if (beta <= 0 || beta > 90) throw new Error("β must be in (0, 90].");
@@ -488,7 +462,7 @@ function calculateObliqueShock() {
       if (theta < 0) throw new Error("Detached shock region (strong shock).");
       betaRad = deg2rad(beta);
       thetaRad = deg2rad(theta);
-
+      calculatedField = "ob-theta";
     } else if (!isNaN(theta) && !isNaN(beta)) { // Case 3: (θ, β) -> M1
       if (beta <= theta) throw new Error("β must be > θ.");
       if (theta < 0) throw new Error("θ must be ≥ 0.");
@@ -498,15 +472,19 @@ function calculateObliqueShock() {
       if (beta <= mu) throw new Error(`Implied Mach wave (β ≤ μ).`);
       betaRad = deg2rad(beta);
       thetaRad = deg2rad(theta);
+      calculatedField = "ob-M1";
     }
     
     const { Mn1, Mn2, M2, p2p1, rho2rho1, T2T1, p02p01 } = obliqueShockRatios(M1, betaRad, thetaRad, g);
-    
     if (isNaN(M2)) throw new Error("Calculation failed. Check inputs.");
 
+    // Update all results AND inputs
     updateText("ob-M1", M1, 3);
     updateText("ob-theta", theta, 2);
     updateText("ob-beta", beta, 2);
+    if (calculatedField) {
+        document.getElementById(calculatedField).classList.add("is-calculated-input");
+    }
     
     updateText("ob-M1n", Mn1);
     updateText("ob-M2n", Mn2);
@@ -517,6 +495,7 @@ function calculateObliqueShock() {
     updateText("ob-p02p01", p02p01);
     
     updateObliqueDiagram(theta, beta);
+    flashResults("oblique-shock");
 
   } catch (err) {
     warning.textContent = err.message;
@@ -535,7 +514,6 @@ function calculatePrandtlMeyer() {
   const thetaDeg = parseFloat(document.getElementById("pm-theta").value);
   const warning = document.getElementById("pm-warning");
   warning.textContent = "";
-
   const resultIDs = ["nu1", "mu1", "nu2", "mu2", "M2", "p2p1", "rho2rho1", "T2T1"];
   
   try {
@@ -546,14 +524,13 @@ function calculatePrandtlMeyer() {
     const mu1 = rad2deg(Math.asin(1/M1));
     const nu2 = nu1 + thetaDeg;
     
-    // *** FIX ***: Typo 'prandf' corrected to 'prandtlMeyer.nu'
     const nu_max = prandtlMeyer.nu(Infinity, g);
     if (nu2 > nu_max) {
       throw new Error(`Expansion angle is too large. Max ν is ${nu_max.toFixed(1)}°.`);
     }
     
     const M2 = prandtlMeyer.M_from_nu(nu2, g);
-    const mu2 = rad2deg(Math.asin(1/M2));
+    const mu2 = M2 === Infinity ? 0 : rad2deg(Math.asin(1/M2));
 
     const p2p1 = isentropic.p0_p(M1, g) / isentropic.p0_p(M2, g);
     const rho2rho1 = isentropic.rho0_rho(M1, g) / isentropic.rho0_rho(M2, g);
@@ -567,6 +544,7 @@ function calculatePrandtlMeyer() {
     updateText("pm-p2p1", p2p1);
     updateText("pm-rho2rho1", rho2rho1);
     updateText("pm-T2T1", T2T1);
+    flashResults("prandtl-meyer");
 
   } catch (err) {
     warning.textContent = err.message;
@@ -582,7 +560,7 @@ function calculatePrandtlMeyer() {
 function runAllCalculators() {
   calculateIsentropic();
   calculateNormalShock();
-  calculateObliqueShock();
+  // Don't run oblique shock on load, as its state is complex
   calculatePrandtlMeyer();
 }
 
@@ -590,7 +568,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Main Tab Navigation ---
   const navButtons = document.querySelectorAll(".nav-btn");
   const panels = document.querySelectorAll(".calculator-panel");
-
   navButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       navButtons.forEach(b => b.classList.remove("active"));
@@ -598,6 +575,28 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.add("active");
       document.getElementById(`${btn.dataset.calculator}-calculator`).classList.add("active");
     });
+  });
+
+  // --- Theme Toggle ---
+  const themeToggle = document.getElementById("theme-toggle-checkbox");
+  const storedTheme = localStorage.getItem("theme");
+  const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+
+  const applyTheme = (theme) => {
+    document.body.dataset.theme = theme;
+    themeToggle.checked = (theme === "light");
+  };
+
+  if (storedTheme) {
+    applyTheme(storedTheme);
+  } else {
+    applyTheme(prefersLight ? "light" : "dark");
+  }
+
+  themeToggle.addEventListener("change", () => {
+    const newTheme = themeToggle.checked ? "light" : "dark";
+    localStorage.setItem("theme", newTheme);
+    applyTheme(newTheme);
   });
 
   // --- Setup Calculator Event Listeners ---
@@ -608,12 +607,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("ns-inputType").addEventListener("change", calculateNormalShock);
   
   document.getElementById("ob-computeBtn").addEventListener("click", calculateObliqueShock);
+  document.getElementById("ob-clearBtn").addEventListener("click", clearObliqueInputs);
   
   document.getElementById("pm-computeBtn").addEventListener("click", calculatePrandtlMeyer);
   
-  // --- Global Gamma Listener ---
   document.getElementById("gamma").addEventListener("change", runAllCalculators);
 
-  // --- Run all calculators on initial load ---
+  // --- Run calculators on initial load ---
   runAllCalculators();
 });

@@ -8,7 +8,17 @@
 </head>
 <body>
   <main>
-    <h1>Gas Dynamics Calculator</h1>
+    <header class="main-header">
+      <h1>Gas Dynamics Calculator</h1>
+      <div class="theme-toggle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <label class="toggle-switch">
+          <input type="checkbox" id="theme-toggle-checkbox">
+          <span class="slider"></span>
+        </label>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </div>
+    </header>
 
     <section class="global-settings">
       <label for="gamma">Ratio of Specific Heats (γ)</label>
@@ -92,13 +102,13 @@
 
       <section class="diagram-section">
         <svg id="ns-diagram" width="640" height="200" viewBox="0 0 640 200">
-          <line x1="80" y1="100" x2="310" y2="100" stroke="#ccc" stroke-width="3" marker-end="url(#arrow)" />
-          <line x1="330" y1="100" x2="560" y2="100" stroke="#ccc" stroke-width="3" marker-end="url(#arrow)" />
-          <line id="ns-shockLine" x1="320" y1="30" x2="320" y2="170" stroke="#ff5050" stroke-width="4" />
-          <text x="180" y="80" font-size="18" fill="#ccc">M₁</text>
-          <text x="450" y="80" font-size="18" fill="#ccc">M₂</text>
-          <text id="ns-M1-label" x="180" y="120" font-size="15" fill="#f2f2f2"></text>
-          <text id="ns-M2-label" x="450" y="120" font-size="15" fill="#f2f2f2"></text>
+          <line x1="80" y1="100" x2="310" y2="100" stroke="var(--muted)" stroke-width="3" marker-end="url(#arrow)" />
+          <line x1="330" y1="100" x2="560" y2="100" stroke="var(--muted)" stroke-width="3" marker-end="url(#arrow)" />
+          <line id="ns-shockLine" x1="320" y1="30" x2="320" y2="170" stroke="var(--danger)" stroke-width="4" />
+          <text x="180" y="80" font-size="18" fill="var(--muted)">M₁</text>
+          <text x="450" y="80" font-size="18" fill="var(--muted)">M₂</text>
+          <text id="ns-M1-label" x="180" y="120" font-size="15" fill="var(--text-main)"></text>
+          <text id="ns-M2-label" x="450" y="120" font-size="15" fill="var(--text-main)"></text>
         </svg>
       </section>
     </section>
@@ -118,7 +128,10 @@
           <label for="ob-beta">Shock angle β (deg)</label>
           <input type="number" id="ob-beta" step="0.1" min="0" max="90" />
         </div>
-        <button id="ob-computeBtn">Compute</button>
+        <div class="button-group">
+            <button id="ob-clearBtn" class="btn-secondary">Clear Inputs</button>
+            <button id="ob-computeBtn" class="btn-primary">Compute</button>
+        </div>
         <p id="ob-warning" class="warning"></p>
       </section>
 
@@ -138,15 +151,15 @@
       <section class="diagram-section">
         <h2>Wave Geometry</h2>
         <svg id="ob-shockDiagram" width="640" height="400" viewBox="0 0 640 400">
-          <line x1="80" y1="320" x2="260" y2="320" stroke="#ccc" stroke-width="3" marker-end="url(#arrow)" />
-          <text x="100" y="300" font-size="18" fill="#ccc">M₁</text>
-          <line id="ob-wedgeBase" x1="280" y1="320" x2="500" y2="320" stroke="#00aaff" stroke-width="6" />
-          <line id="ob-wedgeRamp" x1="280" y1="320" x2="420" y2="280" stroke="#00aaff" stroke-width="6" />
-          <line id="ob-shockLine" x1="280" y1="320" x2="520" y2="200" stroke="#ff5050" stroke-width="4" />
-          <path id="ob-thetaArc" d="" stroke="#00aaff" stroke-width="2" fill="none" />
-          <text id="ob-thetaLabel" x="0" y="0" font-size="15" fill="#00aaff">θ</text>
-          <path id="ob-betaArc" d="" stroke="#ff5050" stroke-width="2" fill="none" />
-          <text id="ob-betaLabel" x="0" y="0" font-size="15" fill="#ff5050">β</text>
+          <line x1="80" y1="320" x2="260" y2="320" stroke="var(--muted)" stroke-width="3" marker-end="url(#arrow)" />
+          <text x="100" y="300" font-size="18" fill="var(--muted)">M₁</text>
+          <line id="ob-wedgeBase" x1="280" y1="320" x2="500" y2="320" stroke="var(--accent)" stroke-width="6" />
+          <line id="ob-wedgeRamp" x1="280" y1="320" x2="420" y2="280" stroke="var(--accent)" stroke-width="6" />
+          <line id="ob-shockLine" x1="280" y1="320" x2="520" y2="200" stroke="var(--danger)" stroke-width="4" />
+          <path id="ob-thetaArc" d="" stroke="var(--accent)" stroke-width="2" fill="none" />
+          <text id="ob-thetaLabel" x="0" y="0" font-size="15" fill="var(--accent)">θ</text>
+          <path id="ob-betaArc" d="" stroke="var(--danger)" stroke-width="2" fill="none" />
+          <text id="ob-betaLabel" x="0" y="0" font-size="15" fill="var(--danger)">β</text>
         </svg>
         <p class="diagram-caption">
           Geometry: β is the shock angle; θ is the flow deflection angle.
@@ -171,7 +184,7 @@
       <section class="results">
         <h2>Results</h2>
         <div class="results-table">
-          <div class="row"><div class="label">ν(M₁) (deg)</div><div class="value"id="pm-nu1">–</div></div>
+          <div class="row"><div class="label">ν(M₁) (deg)</div><div class="value" id="pm-nu1">–</div></div>
           <div class="row"><div class="label">μ₁ (deg)</div><div class="value" id="pm-mu1">–</div></div>
           <div class="row"><div class="label">ν(M₂) (deg)</div><div class="value" id="pm-nu2">–</div></div>
           <div class="row"><div class="label">μ₂ (deg)</div><div class="value" id="pm-mu2">–</div></div>
@@ -188,7 +201,7 @@
   <svg width="0" height="0" style="position:absolute">
     <defs>
       <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
-        <polygon points="0,0 10,5 0,10" fill="#ccc" />
+        <polygon points="0,0 10,5 0,10" fill="var(--muted)" />
       </marker>
     </defs>
   </svg>
