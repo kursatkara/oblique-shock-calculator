@@ -52,7 +52,6 @@ function setVisible(id, visible) {
   }
 }
 
-// *** THIS FUNCTION WAS RESTORED ***
 // Helper to create SVG arc paths (for y-down coordinate system)
 function arcPath(cx, cy, r, a1, a2) {
   const x1 = cx + r * Math.cos(a1);
@@ -60,7 +59,6 @@ function arcPath(cx, cy, r, a1, a2) {
   const x2 = cx + r * Math.cos(a2);
   const y2 = cy - r * Math.sin(a2);
   // Using '0 0 0' for (large-arc-flag, sweep-flag, x-axis-rotation)
-  // The sweep-flag '0' draws clockwise, which is correct for our y-down system
   return `M ${x1},${y1} A ${r},${r} 0 0 0 ${x2},${y2}`;
 }
 
@@ -85,7 +83,8 @@ const isentropic = {
   // A/A* inversion (needs solver)
   A_Astar_func: (M, g) => isentropic.A_Astar(M, g),
   A_Astar_deriv: (M, g) => {
-    return isentropic.A_Astar(M, g) / M * ((1 - M ** 2) / (1 + (g - 1) / 2 * M ** 2));
+    // *** FIX ***: The sign was wrong. It's (M^2 - 1), not (1 - M^2).
+    return isentropic.A_Astar(M, g) * (M ** 2 - 1) / (M * (1 + (g - 1) / 2 * M ** 2));
   },
   M_from_A: (A_Astar, g, supersonic = false) => {
     if (A_Astar < 1) return NaN;
@@ -119,7 +118,7 @@ const normalShockInverse = {
     const M2_sq = M2 ** 2;
     const gm1 = g - 1;
     const M1_sq = (1 + gm1 / 2 * M2_sq) / (g * M2_sq - gm1 / 2);
-    return M1_sq < 1 ? NaN : Math.sqrt(M1_sq); // Return NaN if M1 is subsonic
+    return M1_sq < 1 ? NaN : Math.sqrt(M1_sq);
   },
   M1_from_p2p1: (p2p1, g) => {
     if (p2p1 <= 1) return NaN;
@@ -129,7 +128,7 @@ const normalShockInverse = {
   M1_from_rho2rho1: (rho2rho1, g) => {
     const gp1 = g + 1;
     const gm1 = g - 1;
-    if (rho2rho1 <= 1 || rho2rho1 > gp1 / gm1) return NaN; // Physical limits
+    if (rho2rho1 <= 1 || rho2rho1 > gp1 / gm1) return NaN;
     const M1_sq = (2 * rho2rho1) / (gp1 - gm1 * rho2rho1);
     return Math.sqrt(M1_sq);
   },
@@ -159,11 +158,10 @@ const normalShockInverse = {
   },
   M1_from_p02p01: (p02p01, g) => {
     if (p02p01 >= 1 || p02p01 <= 0) return NaN;
-    const guess = 1 - 2 * (p02p01 - 1); // Simple linear guess
+    const guess = 1 - 2 * (p02p01 - 1);
     return newtonRaphson(normalShockInverse.p02p01_func, normalShockInverse.p02p01_deriv, guess < 1 ? 1.1 : guess, p02p01, g);
   },
   
-  // *** THESE FUNCTIONS WERE ADDED ***
   // For p02/p1
   p02p1_func: (M1, g) => normalShockRatios(M1, g).p02p1,
   p02p1_deriv: (M1, g) => {
@@ -173,8 +171,8 @@ const normalShockInverse = {
     return (f_plus - f_minus) / (2 * h);
   },
   M1_from_p02p1: (p02p1, g) => {
-    if (p02p1 <= 1) return NaN; // p02/p1 is always > 1
-    const guess = 1 + (p02p1 / 5); // Simple linear guess
+    if (p02p1 <= 1) return NaN;
+    const guess = 1 + (p02p1 / 5);
     return newtonRaphson(normalShockInverse.p02p1_func, normalShockInverse.p02p1_deriv, guess < 1 ? 1.1 : guess, p02p1, g);
   }
 };
@@ -205,7 +203,7 @@ function ob_beta_from_M1_theta(M1, theta, g) {
   const term1 = (b + 9 * a * c) / (2 * (1 - 3 * a * b));
   const term2 = (d * (27 * a * a * c + 9 * a * b - 2)) / (6 * a * (1 - 3 * a * b));
   const angle = (1 / 3) * Math.atan(1 / d); // n=0 for weak shock
-  return Math.atan(term1 - term2 * Math.tan(angle)); // Returns beta in radians
+  return Math.atan(term1 - term2 * Math.tan(angle));
 }
 
 // Case 2: (M1, β) -> θ
@@ -213,9 +211,10 @@ function ob_theta_from_M1_beta(M1, beta, g) {
   const betaRad = deg2rad(beta);
   const M1_sq = M1 ** 2;
   const num = (M1_sq * Math.sin(betaRad) ** 2 - 1);
-  const den = (M1_sq * (g + Math.cos(2 * betaRad)) / 2 + 1);
+  // *** FIX ***: The denominator was (M1_sq * (g + cos(2*betaRad)) / 2 + 1), which is (correct_den / 2).
+  const den = M1_sq * (g + Math.cos(2 * betaRad)) + 2;
   const thetaRad = Math.atan(2 * (1/Math.tan(betaRad)) * num / den);
-  return rad2deg(thetaRad); // Returns theta in degrees
+  return rad2deg(thetaRad);
 }
 
 // Case 3: (θ, β) -> M1
@@ -225,7 +224,7 @@ function ob_M1_from_theta_beta(theta, beta, g) {
   if (beta <= theta) return NaN;
 
   const T = Math.tan(thetaRad);
-  const C = 1 / Math.tan(betaRad); // cot(beta)
+  const C = 1 / Math.tan(betaRad);
   const S2 = Math.sin(betaRad) ** 2;
   const G = g + Math.cos(2 * betaRad);
 
@@ -247,7 +246,7 @@ const prandtlMeyer = {
     return rad2deg(g_ratio * Math.atan(term1) - Math.atan(term2));
   },
 
-  nu_rad: (M, g) => deg2rad(prandtlMeyer.nu(M, g)), // For solver
+  nu_rad: (M, g) => deg2rad(prandtlMeyer.nu(M, g)),
 
   nu_deriv: (M, g) => {
     if (M <= 1) return 0;
@@ -264,7 +263,7 @@ const prandtlMeyer = {
     if (nu_deg > nu_max) return Infinity;
 
     const nu_rad_target = deg2rad(nu_deg);
-    const guess = 1.5 + (nu_deg / nu_max) * 10; // Empirical guess
+    const guess = 1.5 + (nu_deg / nu_max) * 10;
     return newtonRaphson(prandtlMeyer.nu_rad, prandtlMeyer.nu_deriv, guess, nu_rad_target, g);
   }
 };
@@ -335,54 +334,47 @@ function calculateIsentropic() {
   warning.textContent = "";
   
   let M = NaN, T0_T, p0_p, rho0_rho, A_Astar;
+  const resultIDs = ["is-M", "is-p0_p", "is-rho0_rho", "is-T0_T", "is-A_Astar"];
 
   try {
     switch (inputType) {
       case "M":
         M = inputValue;
         if (M <= 0) throw new Error("M must be > 0.");
-        T0_T = isentropic.T0_T(M, g);
-        p0_p = isentropic.p0_p(M, g);
-        rho0_rho = isentropic.rho0_rho(M, g);
-        A_Astar = isentropic.A_Astar(M, g);
         break;
       case "T0_T":
         T0_T = inputValue;
         if (T0_T < 1) throw new Error("T₀/T must be ≥ 1.");
         M = isentropic.M_from_T(T0_T, g);
-        p0_p = isentropic.p0_p(M, g);
-        rho0_rho = isentropic.rho0_rho(M, g);
-        A_Astar = isentropic.A_Astar(M, g);
         break;
       case "p0_p":
         p0_p = inputValue;
         if (p0_p < 1) throw new Error("p₀/p must be ≥ 1.");
         M = isentropic.M_from_p(p0_p, g);
-        T0_T = isentropic.T0_T(M, g);
-        rho0_rho = isentropic.rho0_rho(M, g);
-        A_Astar = isentropic.A_Astar(M, g);
         break;
       case "rho0_rho":
         rho0_rho = inputValue;
         if (rho0_rho < 1) throw new Error("ρ₀/ρ must be ≥ 1.");
         M = isentropic.M_from_rho(rho0_rho, g);
-        T0_T = isentropic.T0_T(M, g);
-        p0_p = isentropic.p0_p(M, g);
-        A_Astar = isentropic.A_Astar(M, g);
         break;
       case "A_Astar_sub":
       case "A_Astar_super":
         A_Astar = inputValue;
         if (A_Astar < 1) throw new Error("A/A* must be ≥ 1.");
         M = isentropic.M_from_A(A_Astar, g, inputType === "A_Astar_super");
-        T0_T = isentropic.T0_T(M, g);
-        p0_p = isentropic.p0_p(M, g);
-        rho0_rho = isentropic.rho0_rho(M, g);
         break;
     }
-    if (isNaN(M)) throw new Error("Calculation failed. Check inputs.");
+    if (isNaN(M)) throw new Error("Calculation failed. Check inputs or solver failed.");
+    
+    // Calculate all other values from M
+    T0_T = isentropic.T0_T(M, g);
+    p0_p = isentropic.p0_p(M, g);
+    rho0_rho = isentropic.rho0_rho(M, g);
+    A_Astar = isentropic.A_Astar(M, g);
+
   } catch (err) {
     warning.textContent = err.message;
+    clearResults("is", resultIDs.map(id => id.split('-')[1]));
   }
 
   updateText("is-M", M);
@@ -429,7 +421,6 @@ function calculateNormalShock() {
         M1 = normalShockInverse.M1_from_p02p01(inputValue, g);
         if (isNaN(M1)) throw new Error("Invalid p₀₂/p₀₁. Must be < 1 and > 0.");
         break;
-      // *** THIS CASE WAS ADDED ***
       case "p02_p1":
         M1 = normalShockInverse.M1_from_p02p1(inputValue, g);
         if (isNaN(M1)) throw new Error("Invalid p₀₂/p₁. Must be > 1.");
@@ -552,7 +543,7 @@ function calculatePrandtlMeyer() {
     const mu1 = rad2deg(Math.asin(1/M1));
     const nu2 = nu1 + thetaDeg;
     
-    const nu_max = prandtlMeyer.nu(Infinity, g);
+    const nu_max = prandf (Infinity, g);
     if (nu2 > nu_max) {
       throw new Error(`Expansion angle is too large. Max ν is ${nu_max.toFixed(1)}°.`);
     }
