@@ -13,8 +13,9 @@ body {
   background-color: var(--bg);
   color: var(--text);
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column; /* Stack main and footer */
+  justify-content: flex-start;
+  align-items: center; /* Center content */
   min-height: 100vh;
   margin: 0;
   padding: 2rem 0;
@@ -35,6 +36,51 @@ h1, h2 {
   margin-top: 0;
 }
 
+/* --- New Navigation Styles --- */
+.calculator-nav {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+.nav-btn {
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px; /* Align with parent border */
+}
+
+.nav-btn:hover {
+  color: var(--text);
+}
+
+.nav-btn.active {
+  color: var(--accent);
+  border-bottom: 3px solid var(--accent);
+}
+
+/* --- Calculator Panel Visibility --- */
+.calculator-panel {
+  display: none;
+}
+
+.calculator-panel.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Re-usable Component Styles (from original) --- */
 label {
   font-weight: 600;
   color: var(--text);
@@ -52,18 +98,24 @@ label {
   flex-direction: column;
   margin-top: 1rem;
 }
+.input-row:first-child {
+  margin-top: 0;
+}
 
-input {
+input, select {
   padding: 0.5rem;
   border-radius: 6px;
   border: 1px solid var(--border);
   background-color: #0e0e0e;
   color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
 }
 
 button {
   margin-top: 1.2rem;
   padding: 0.6rem;
+  width: 100%;
   border: none;
   background: var(--accent);
   color: #fff;
@@ -83,6 +135,7 @@ button:hover {
   min-height: 1.2em;
   font-size: 0.9rem;
   margin-top: 0.5rem;
+  text-align: center;
 }
 
 .results {
@@ -103,6 +156,9 @@ button:hover {
   padding: 0.4rem 0.3rem;
   border-bottom: 1px solid var(--border);
 }
+.results-table .row:last-child {
+  border-bottom: none;
+}
 
 .results-table .label {
   color: var(--muted);
@@ -119,7 +175,7 @@ button:hover {
   text-align: center;
 }
 
-#shockDiagram {
+svg {
   max-width: 100%;
   height: auto;
   margin-top: 1rem;
@@ -143,4 +199,6 @@ footer {
   margin-top: 1.5rem;
   font-size: 0.8rem;
   color: var(--muted);
+  max-width: 760px;
+  width: 90%;
 }
