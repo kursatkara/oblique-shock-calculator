@@ -52,6 +52,19 @@ function setVisible(id, visible) {
   }
 }
 
+// *** THIS FUNCTION WAS RESTORED ***
+// Helper to create SVG arc paths (for y-down coordinate system)
+function arcPath(cx, cy, r, a1, a2) {
+  const x1 = cx + r * Math.cos(a1);
+  const y1 = cy - r * Math.sin(a1);
+  const x2 = cx + r * Math.cos(a2);
+  const y2 = cy - r * Math.sin(a2);
+  // Using '0 0 0' for (large-arc-flag, sweep-flag, x-axis-rotation)
+  // The sweep-flag '0' draws clockwise, which is correct for our y-down system
+  return `M ${x1},${y1} A ${r},${r} 0 0 0 ${x2},${y2}`;
+}
+
+
 // ========================================================================
 // === Gas Dynamics Models (The "Math") ===================================
 // ========================================================================
@@ -125,8 +138,6 @@ const normalShockInverse = {
     const gp1 = g + 1;
     const gm1 = g - 1;
     
-    // Solve quadratic equation for X = M1_sq
-    // aX^2 + bX + c = 0
     const a = 2 * g * gm1;
     const b = (4 * g - gm1**2 - gp1**2 * T2T1);
     const c = -2 * gm1;
@@ -135,15 +146,12 @@ const normalShockInverse = {
     if (discriminant < 0) return NaN;
     
     const X1 = (-b + Math.sqrt(discriminant)) / (2*a);
-    // const X2 = (-b - Math.sqrt(discriminant)) / (2*a); // Other root is not physical
-    
     return X1 < 1 ? NaN : Math.sqrt(X1);
   },
   
-  // For p02/p01, we need Newton-Raphson
+  // For p02/p01
   p02p01_func: (M1, g) => normalShockRatios(M1, g).p02p01,
   p02p01_deriv: (M1, g) => {
-    // This derivative is complex. We'll use a numerical approximation.
     const h = 1e-6;
     const f_plus = normalShockRatios(M1 + h, g).p02p01 || 0;
     const f_minus = normalShockRatios(M1 - h, g).p02p01 || 0;
@@ -151,9 +159,23 @@ const normalShockInverse = {
   },
   M1_from_p02p01: (p02p01, g) => {
     if (p02p01 >= 1 || p02p01 <= 0) return NaN;
-    // Guess M1
     const guess = 1 - 2 * (p02p01 - 1); // Simple linear guess
     return newtonRaphson(normalShockInverse.p02p01_func, normalShockInverse.p02p01_deriv, guess < 1 ? 1.1 : guess, p02p01, g);
+  },
+  
+  // *** THESE FUNCTIONS WERE ADDED ***
+  // For p02/p1
+  p02p1_func: (M1, g) => normalShockRatios(M1, g).p02p1,
+  p02p1_deriv: (M1, g) => {
+    const h = 1e-6;
+    const f_plus = normalShockRatios(M1 + h, g).p02p1 || 0;
+    const f_minus = normalShockRatios(M1 - h, g).p02p1 || 0;
+    return (f_plus - f_minus) / (2 * h);
+  },
+  M1_from_p02p1: (p02p1, g) => {
+    if (p02p1 <= 1) return NaN; // p02/p1 is always > 1
+    const guess = 1 + (p02p1 / 5); // Simple linear guess
+    return newtonRaphson(normalShockInverse.p02p1_func, normalShockInverse.p02p1_deriv, guess < 1 ? 1.1 : guess, p02p1, g);
   }
 };
 
@@ -192,7 +214,7 @@ function ob_theta_from_M1_beta(M1, beta, g) {
   const M1_sq = M1 ** 2;
   const num = (M1_sq * Math.sin(betaRad) ** 2 - 1);
   const den = (M1_sq * (g + Math.cos(2 * betaRad)) / 2 + 1);
-  const thetaRad = Math.atan(2 * (1/Math.tan(betaRad)) * num / (den * 2)); // *2 / 2 cancels
+  const thetaRad = Math.atan(2 * (1/Math.tan(betaRad)) * num / den);
   return rad2deg(thetaRad); // Returns theta in degrees
 }
 
@@ -264,7 +286,6 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
   const isValidTheta = !isNaN(thetaDeg) && thetaDeg > 0;
   const thetaRad = isValidTheta ? deg2rad(thetaDeg) : 0;
   
-  // Wedge and Theta (always draw if theta is valid)
   setVisible("ob-wedgeBase", isValidTheta);
   setVisible("ob-wedgeRamp", isValidTheta);
   setVisible("ob-thetaArc", isValidTheta);
@@ -275,13 +296,11 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-wedgeRamp").setAttribute("x2", x0 + Lwedge * Math.cos(thetaRad));
     document.getElementById("ob-wedgeRamp").setAttribute("y2", y0 - Lwedge * Math.sin(thetaRad));
     document.getElementById("ob-thetaArc").setAttribute("d", arcPath(x0, y0, 40, 0, thetaRad));
-    // Position label with text-anchor: start
     document.getElementById("ob-thetaLabel").setAttribute("x", x0 + 65 * Math.cos(thetaRad / 2));
     document.getElementById("ob-thetaLabel").setAttribute("y", y0 - 65 * Math.sin(thetaRad / 2));
     document.getElementById("ob-thetaLabel").textContent = `θ=${thetaDeg.toFixed(1)}°`;
   }
 
-  // Shock and Beta (only if valid)
   const isValidBeta = !isNaN(betaDeg) && betaDeg > 0;
   setVisible("ob-shockLine", isValidBeta);
   setVisible("ob-betaArc", isValidBeta);
@@ -293,7 +312,6 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-shockLine").setAttribute("x2", x0 + Lshock * Math.cos(betaRad));
     document.getElementById("ob-shockLine").setAttribute("y2", y0 - Lshock * Math.sin(betaRad));
     document.getElementById("ob-betaArc").setAttribute("d", arcPath(x0, y0, 60, 0, betaRad));
-    // Position label with text-anchor: start
     document.getElementById("ob-betaLabel").setAttribute("x", x0 + 90 * Math.cos(betaRad / 2));
     document.getElementById("ob-betaLabel").setAttribute("y", y0 - 90 * Math.sin(betaRad / 2));
     document.getElementById("ob-betaLabel").textContent = `β=${betaDeg.toFixed(1)}°`;
@@ -411,6 +429,11 @@ function calculateNormalShock() {
         M1 = normalShockInverse.M1_from_p02p01(inputValue, g);
         if (isNaN(M1)) throw new Error("Invalid p₀₂/p₀₁. Must be < 1 and > 0.");
         break;
+      // *** THIS CASE WAS ADDED ***
+      case "p02_p1":
+        M1 = normalShockInverse.M1_from_p02p1(inputValue, g);
+        if (isNaN(M1)) throw new Error("Invalid p₀₂/p₁. Must be > 1.");
+        break;
     }
     
     if (isNaN(M1) || M1 <= 1) throw new Error("Calculation failed. Ensure input is in a valid range.");
@@ -483,12 +506,10 @@ function calculateObliqueShock() {
       thetaRad = deg2rad(theta);
     }
     
-    // We have M1, thetaRad, betaRad. Calculate ratios.
     const { Mn1, Mn2, M2, p2p1, rho2rho1, T2T1, p02p01 } = obliqueShockRatios(M1, betaRad, thetaRad, g);
     
     if (isNaN(M2)) throw new Error("Calculation failed. Check inputs.");
 
-    // Update all results AND inputs
     updateText("ob-M1", M1, 3);
     updateText("ob-theta", theta, 2);
     updateText("ob-beta", beta, 2);
@@ -505,9 +526,7 @@ function calculateObliqueShock() {
 
   } catch (err) {
     warning.textContent = err.message;
-    // Clear only results, leave inputs
     clearResults("ob", resultIDs); 
-    // Clear calculated input field
     if (isNaN(M1_in)) updateText("ob-M1", NaN);
     if (isNaN(theta_in)) updateText("ob-theta", NaN);
     if (isNaN(beta_in)) updateText("ob-beta", NaN);
@@ -541,7 +560,6 @@ function calculatePrandtlMeyer() {
     const M2 = prandtlMeyer.M_from_nu(nu2, g);
     const mu2 = rad2deg(Math.asin(1/M2));
 
-    // Ratios are isentropic (p0 and T0 are constant)
     const p2p1 = isentropic.p0_p(M1, g) / isentropic.p0_p(M2, g);
     const rho2rho1 = isentropic.rho0_rho(M1, g) / isentropic.rho0_rho(M2, g);
     const T2T1 = isentropic.T0_T(M1, g) / isentropic.T0_T(M2, g);
