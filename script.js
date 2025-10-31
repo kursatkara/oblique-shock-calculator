@@ -35,6 +35,19 @@ function arcPath(cx, cy, r, a1, a2) {
   return `M ${x1},${y1} A ${r},${r} 0 0 0 ${x2},${y2}`;
 }
 
+// Helper to clear results table
+function clearResults() {
+  document.getElementById("thetaOut").textContent = "–";
+  document.getElementById("beta").textContent = "–";
+  document.getElementById("M1n").textContent = "–";
+  document.getElementById("M2n").textContent = "–";
+  document.getElementById("M2").textContent = "–";
+  document.getElementById("p2p1").textContent = "–";
+  document.getElementById("rho2rho1").textContent = "–";
+  document.getElementById("T2T1").textContent = "–";
+  document.getElementById("p02p01").textContent = "–";
+}
+
 function updateDiagram(thetaDeg, betaDeg) {
   const wedgeBase = document.getElementById("wedgeBase");
   const wedgeRamp = document.getElementById("wedgeRamp");
@@ -46,10 +59,10 @@ function updateDiagram(thetaDeg, betaDeg) {
 
   const x0 = 280, y0 = 320;
   const thetaRad = (thetaDeg * Math.PI) / 180;
-  const betaRad = (betaDeg * Math.PI) / 180;
 
   const Lbase = 220, Lwedge = 150, Lshock = 220;
 
+  // Always draw the wedge and theta angle
   wedgeBase.setAttribute("x1", x0);
   wedgeBase.setAttribute("y1", y0);
   wedgeBase.setAttribute("x2", x0 + Lbase);
@@ -60,37 +73,55 @@ function updateDiagram(thetaDeg, betaDeg) {
   wedgeRamp.setAttribute("x2", x0 + Lwedge * Math.cos(thetaRad));
   wedgeRamp.setAttribute("y2", y0 - Lwedge * Math.sin(thetaRad));
 
-  shockLine.setAttribute("x1", x0);
-  shockLine.setAttribute("y1", y0);
-  shockLine.setAttribute("x2", x0 + Lshock * Math.cos(betaRad));
-  shockLine.setAttribute("y2", y0 - Lshock * Math.sin(betaRad));
-
   thetaArc.setAttribute("d", arcPath(x0, y0, 40, 0, thetaRad));
-  betaArc.setAttribute("d", arcPath(x0, y0, 60, 0, betaRad));
-
   thetaLabel.setAttribute("x", x0 + 60 * Math.cos(thetaRad / 2));
   thetaLabel.setAttribute("y", y0 - 60 * Math.sin(thetaRad / 2));
   thetaLabel.textContent = `θ=${thetaDeg.toFixed(1)}°`;
 
-  betaLabel.setAttribute("x", x0 + 85 * Math.cos(betaRad / 2));
-  betaLabel.setAttribute("y", y0 - 85 * Math.sin(betaRad / 2));
-  betaLabel.textContent = `β=${betaDeg.toFixed(1)}°`;
+  // Conditionally draw the shock wave
+  if (isNaN(betaDeg)) {
+    shockLine.style.display = 'none';
+    betaArc.style.display = 'none';
+    betaLabel.style.display = 'none';
+  } else {
+    shockLine.style.display = 'block';
+    betaArc.style.display = 'block';
+    betaLabel.style.display = 'block';
+
+    const betaRad = (betaDeg * Math.PI) / 180;
+
+    shockLine.setAttribute("x1", x0);
+    shockLine.setAttribute("y1", y0);
+    shockLine.setAttribute("x2", x0 + Lshock * Math.cos(betaRad));
+    shockLine.setAttribute("y2", y0 - Lshock * Math.sin(betaRad));
+
+    betaArc.setAttribute("d", arcPath(x0, y0, 60, 0, betaRad));
+
+    betaLabel.setAttribute("x", x0 + 85 * Math.cos(betaRad / 2));
+    betaLabel.setAttribute("y", y0 - 85 * Math.sin(betaRad / 2));
+    betaLabel.textContent = `β=${betaDeg.toFixed(1)}°`;
+  }
 }
 
 function calculate() {
   const M1 = parseFloat(document.getElementById("M1").value);
   const thetaDeg = parseFloat(document.getElementById("theta").value);
   const warning = document.getElementById("warning");
+  
   if (isNaN(M1) || isNaN(thetaDeg) || M1 <= 1) {
     warning.textContent = "M₁ must be > 1 for an attached oblique shock.";
+    clearResults();
+    updateDiagram(isNaN(thetaDeg) ? 0 : thetaDeg, NaN); // Hide shock
     return;
   }
 
   const betaRad = betaAnalytical(M1, thetaDeg, gamma, 0);
   const betaDeg = betaRad * 180 / Math.PI;
+
   if (isNaN(betaRad) || betaDeg <= thetaDeg || betaDeg >= 90) {
     warning.textContent = "No attached weak oblique shock for this (M₁, θ).";
-    updateDiagram(thetaDeg, thetaDeg);
+    clearResults();
+    updateDiagram(thetaDeg, NaN); // Hide shock
     return;
   }
 
@@ -112,4 +143,5 @@ function calculate() {
 }
 
 document.getElementById("computeBtn").addEventListener("click", calculate);
+// Run on initial load
 calculate();
