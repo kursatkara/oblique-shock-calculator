@@ -83,7 +83,6 @@ const isentropic = {
   // A/A* inversion (needs solver)
   A_Astar_func: (M, g) => isentropic.A_Astar(M, g),
   A_Astar_deriv: (M, g) => {
-    // *** FIX ***: The sign was wrong. It's (M^2 - 1), not (1 - M^2).
     return isentropic.A_Astar(M, g) * (M ** 2 - 1) / (M * (1 + (g - 1) / 2 * M ** 2));
   },
   M_from_A: (A_Astar, g, supersonic = false) => {
@@ -211,7 +210,6 @@ function ob_theta_from_M1_beta(M1, beta, g) {
   const betaRad = deg2rad(beta);
   const M1_sq = M1 ** 2;
   const num = (M1_sq * Math.sin(betaRad) ** 2 - 1);
-  // *** FIX ***: The denominator was (M1_sq * (g + cos(2*betaRad)) / 2 + 1), which is (correct_den / 2).
   const den = M1_sq * (g + Math.cos(2 * betaRad)) + 2;
   const thetaRad = Math.atan(2 * (1/Math.tan(betaRad)) * num / den);
   return rad2deg(thetaRad);
@@ -237,6 +235,11 @@ function ob_M1_from_theta_beta(theta, beta, g) {
 const prandtlMeyer = {
   nu: (M, g) => {
     if (M < 1) return 0;
+    if (M === Infinity) { // Handle max angle case
+        const gp1 = g + 1;
+        const gm1 = g - 1;
+        return rad2deg(Math.sqrt(gp1 / gm1) * Math.PI / 2 - Math.PI / 2);
+    }
     const gp1 = g + 1;
     const gm1 = g - 1;
     const g_ratio = Math.sqrt(gp1 / gm1);
@@ -543,7 +546,8 @@ function calculatePrandtlMeyer() {
     const mu1 = rad2deg(Math.asin(1/M1));
     const nu2 = nu1 + thetaDeg;
     
-    const nu_max = prandf (Infinity, g);
+    // *** FIX ***: Typo 'prandf' corrected to 'prandtlMeyer.nu'
+    const nu_max = prandtlMeyer.nu(Infinity, g);
     if (nu2 > nu_max) {
       throw new Error(`Expansion angle is too large. Max ν is ${nu_max.toFixed(1)}°.`);
     }
