@@ -1,12 +1,12 @@
 // ------------------------------------------------------------
 // Oblique Shock Calculator
 // Analytical theta–beta–Mach solution (Rudd & Lewis, 1998)
+// with corrected wedge–shock geometry visualization
 // ------------------------------------------------------------
 
 const gamma = 1.4;
 
-// Analytical θ–β–M relation (Rudd & Lewis 1998, AIAA J. Aircraft, 35(4))
-// n = 0 → weak shock, n = 1 → strong shock
+// Analytical θ–β–M relation (Rudd & Lewis 1998)
 function betaAnalytical(M1, thetaDeg, gamma = 1.4, n = 0) {
   const theta = (thetaDeg * Math.PI) / 180;
   const mu = Math.asin(1 / M1);
@@ -53,8 +53,9 @@ function arcPath(cx, cy, r, a1, a2) {
   return `M ${x1.toFixed(1)},${y1.toFixed(1)} A ${r},${r} 0 ${largeArcFlag} ${sweepFlag} ${x2.toFixed(1)},${y2.toFixed(1)}`;
 }
 
-// Update the wedge–shock diagram dynamically
+// Corrected wedge–shock geometry
 function updateDiagram(thetaDeg, betaDeg) {
+  const wedgeBase = document.getElementById("wedgeBase");
   const wedgeRamp = document.getElementById("wedgeRamp");
   const shockLine = document.getElementById("shockLine");
   const thetaArc = document.getElementById("thetaArc");
@@ -62,36 +63,58 @@ function updateDiagram(thetaDeg, betaDeg) {
   const thetaLabel = document.getElementById("thetaLabel");
   const betaLabel = document.getElementById("betaLabel");
 
-  const x0 = 140, y0 = 160;
+  const x0 = 280;
+  const y0 = 320;
+
   const thetaRad = (thetaDeg * Math.PI) / 180;
   const betaRad = (betaDeg * Math.PI) / 180;
 
-  const Lw = 80;
-  const xW = x0 + Lw * Math.cos(thetaRad);
-  const yW = y0 - Lw * Math.sin(thetaRad);
-  wedgeRamp.setAttribute("x2", xW);
-  wedgeRamp.setAttribute("y2", yW);
+  const Lbase = 200;
+  const Lwedge = 120;
+  const Lshock = 200;
 
-  const Ls = 130;
-  const xS = x0 + Ls * Math.cos(betaRad);
-  const yS = y0 - Ls * Math.sin(betaRad);
-  shockLine.setAttribute("x2", xS);
-  shockLine.setAttribute("y2", yS);
+  // Wedge baseline (horizontal)
+  const xBase2 = x0 + Lbase;
+  const yBase2 = y0;
+  wedgeBase.setAttribute("x1", x0);
+  wedgeBase.setAttribute("y1", y0);
+  wedgeBase.setAttribute("x2", xBase2);
+  wedgeBase.setAttribute("y2", yBase2);
 
-  const rT = 28;
-  thetaArc.setAttribute("d", arcPath(x0, y0, rT, 0, thetaRad));
-  thetaLabel.setAttribute("x", x0 + (rT + 12) * Math.cos(thetaRad / 2));
-  thetaLabel.setAttribute("y", y0 - (rT + 12) * Math.sin(thetaRad / 2));
+  // Wedge ramp
+  const xRamp2 = x0 + Lwedge * Math.cos(thetaRad);
+  const yRamp2 = y0 - Lwedge * Math.sin(thetaRad);
+  wedgeRamp.setAttribute("x1", x0);
+  wedgeRamp.setAttribute("y1", y0);
+  wedgeRamp.setAttribute("x2", xRamp2);
+  wedgeRamp.setAttribute("y2", yRamp2);
+
+  // Shock line
+  const xShock2 = x0 + Lshock * Math.cos(betaRad);
+  const yShock2 = y0 - Lshock * Math.sin(betaRad);
+  shockLine.setAttribute("x1", x0);
+  shockLine.setAttribute("y1", y0);
+  shockLine.setAttribute("x2", xShock2);
+  shockLine.setAttribute("y2", yShock2);
+
+  // θ arc and label
+  const rTheta = 40;
+  thetaArc.setAttribute("d", arcPath(x0, y0, rTheta, 0, thetaRad));
+  const thetaMid = thetaRad / 2;
+  thetaLabel.setAttribute("x", x0 + (rTheta + 20) * Math.cos(thetaMid));
+  thetaLabel.setAttribute("y", y0 - (rTheta + 20) * Math.sin(thetaMid));
   thetaLabel.textContent = `θ=${thetaDeg.toFixed(1)}°`;
 
-  const rB = 44;
-  betaArc.setAttribute("d", arcPath(x0, y0, rB, 0, betaRad));
-  betaLabel.setAttribute("x", x0 + (rB + 12) * Math.cos(betaRad / 2));
-  betaLabel.setAttribute("y", y0 - (rB + 12) * Math.sin(betaRad / 2));
+  // β arc and label
+  const rBeta = 60;
+  betaArc.setAttribute("d", arcPath(x0, y0, rBeta, 0, betaRad));
+  const betaMid = betaRad / 2;
+  betaLabel.setAttribute("x", x0 + (rBeta + 20) * Math.cos(betaMid));
+  betaLabel.setAttribute("y", y0 - (rBeta + 20) * Math.sin(betaMid));
   betaLabel.textContent = `β=${betaDeg.toFixed(1)}°`;
 }
 
-// Main calculation and update
+// Main computation
 function calculate() {
   const M1 = parseFloat(document.getElementById("M1").value);
   const thetaDeg = parseFloat(document.getElementById("theta").value);
@@ -102,7 +125,7 @@ function calculate() {
     return;
   }
 
-  const betaRad = betaAnalytical(M1, thetaDeg, gamma, 0); // weak shock
+  const betaRad = betaAnalytical(M1, thetaDeg, gamma, 0);
   const betaDeg = betaRad * 180 / Math.PI;
 
   if (isNaN(betaRad) || betaDeg <= thetaDeg || betaDeg >= 90) {
@@ -116,7 +139,7 @@ function calculate() {
   const thetaRad = thetaDeg * Math.PI / 180;
   const { p2p1, rho2rho1, T2T1, M2 } = obliqueShockRelations(M1, betaRad, thetaRad);
 
-  // Display results with requested precision
+  // Output with precision
   document.getElementById("beta").textContent = betaDeg.toFixed(2);
   document.getElementById("M2").textContent = M2.toFixed(4);
   document.getElementById("p2p1").textContent = p2p1.toFixed(4);
