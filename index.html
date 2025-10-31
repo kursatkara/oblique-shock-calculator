@@ -10,6 +10,11 @@
   <main>
     <h1>Gas Dynamics Calculator</h1>
 
+    <section class="global-settings">
+      <label for="gamma">Ratio of Specific Heats (γ)</label>
+      <input type="number" id="gamma" value="1.4" step="0.01" min="1.01">
+    </section>
+
     <nav class="calculator-nav">
       <button class="nav-btn active" data-calculator="isentropic">Isentropic Flow</button>
       <button class="nav-btn" data-calculator="normal-shock">Normal Shock</button>
@@ -23,9 +28,9 @@
           <label for="is-inputType">Calculate from:</label>
           <select id="is-inputType">
             <option value="M">Mach Number (M)</option>
-            <option value="T_T0">T/T₀ (Temp. Ratio)</option>
-            <option value="p_p0">p/p₀ (Pressure Ratio)</option>
-            <option value="rho_rho0">ρ/ρ₀ (Density Ratio)</option>
+            <option value="T0_T">T₀/T (Temp. Ratio)</option>
+            <option value="p0_p">p₀/p (Pressure Ratio)</option>
+            <option value="rho0_rho">ρ₀/ρ (Density Ratio)</option>
             <option value="A_Astar_sub">A/A* (Subsonic)</option>
             <option value="A_Astar_super">A/A* (Supersonic)</option>
           </select>
@@ -42,9 +47,9 @@
         <h2>Results</h2>
         <div class="results-table">
           <div class="row"><div class="label">Mach Number (M)</div><div class="value" id="is-M">–</div></div>
-          <div class="row"><div class="label">p/p₀</div><div class="value" id="is-p_p0">–</div></div>
-          <div class="row"><div class="label">ρ/ρ₀</div><div class="value" id="is-rho_rho0">–</div></div>
-          <div class="row"><div class="label">T/T₀</div><div class="value" id="is-T_T0">–</div></div>
+          <div class="row"><div class="label">p₀/p</div><div class="value" id="is-p0_p">–</div></div>
+          <div class="row"><div class="label">ρ₀/ρ</div><div class="value" id="is-rho0_rho">–</div></div>
+          <div class="row"><div class="label">T₀/T</div><div class="value" id="is-T0_T">–</div></div>
           <div class="row"><div class="label">A/A*</div><div class="value" id="is-A_Astar">–</div></div>
         </div>
       </section>
@@ -53,8 +58,19 @@
     <section id="normal-shock-calculator" class="calculator-panel">
       <section class="input-section">
         <div class="input-row">
-          <label for="ns-M1">Upstream Mach number M₁</label>
-          <input type="number" id="ns-M1" step="0.1" value="2.5" min="1.01" />
+          <label for="ns-inputType">Calculate from:</label>
+          <select id="ns-inputType">
+            <option value="M1">M₁ (Upstream Mach)</option>
+            <option value="M2">M₂ (Downstream Mach)</option>
+            <option value="p2_p1">p₂/p₁ (Pressure Ratio)</option>
+            <option value="rho2_rho1">ρ₂/ρ₁ (Density Ratio)</option>
+            <option value="T2_T1">T₂/T₁ (Temp. Ratio)</option>
+            <option value="p02_p01">p₀₂/p₀₁ (Stag. Pressure Ratio)</option>
+          </select>
+        </div>
+        <div class="input-row">
+          <label for="ns-inputValue">Input Value:</label>
+          <input type="number" id="ns-inputValue" step="0.01" value="2.5" min="0.01" />
         </div>
         <button id="ns-computeBtn">Compute</button>
         <p id="ns-warning" class="warning"></p>
@@ -63,11 +79,13 @@
       <section class="results">
         <h2>Results</h2>
         <div class="results-table">
+          <div class="row"><div class="label">M₁</div><div class="value" id="ns-M1">–</div></div>
           <div class="row"><div class="label">M₂</div><div class="value" id="ns-M2">–</div></div>
           <div class="row"><div class="label">p₂/p₁</div><div class="value" id="ns-p2p1">–</div></div>
           <div class="row"><div class="label">ρ₂/ρ₁</div><div class="value" id="ns-rho2rho1">–</div></div>
           <div class="row"><div class="label">T₂/T₁</div><div class="value" id="ns-T2T1">–</div></div>
           <div class="row"><div class="label">p₀₂/p₀₁</div><div class="value" id="ns-p02p01">–</div></div>
+          <div class="row"><div class="label">p₀₂/p₁</div><div class="value" id="ns-p02p1">–</div></div>
         </div>
       </section>
 
@@ -86,13 +104,18 @@
 
     <section id="oblique-shock-calculator" class="calculator-panel">
       <section class="input-section">
+        <p class="input-hint">Enter any two values to calculate the third.</p>
         <div class="input-row">
           <label for="ob-M1">Mach number M₁</label>
           <input type="number" id="ob-M1" step="0.1" value="5.0" min="1.01" />
         </div>
         <div class="input-row">
           <label for="ob-theta">Deflection angle θ (deg)</label>
-          <input type="number" id="ob-theta" step="0.1" value="20" min="0.1" max="60" />
+          <input type="number" id="ob-theta" step="0.1" value="20" min="0" max="90" />
+        </div>
+        <div class="input-row">
+          <label for="ob-beta">Shock angle β (deg)</label>
+          <input type="number" id="ob-beta" step="0.1" min="0" max="90" />
         </div>
         <button id="ob-computeBtn">Compute</button>
         <p id="ob-warning" class="warning"></p>
@@ -101,8 +124,6 @@
       <section class="results">
         <h2>Results</h2>
         <div class="results-table">
-          <div class="row"><div class="label">θ (deg)</div><div class="value" id="ob-thetaOut">–</div></div>
-          <div class="row"><div class="label">β (deg)</div><div class="value" id="ob-beta">–</div></div>
           <div class="row"><div class="label">M₁ₙ</div><div class="value" id="ob-M1n">–</div></div>
           <div class="row"><div class="label">M₂ₙ</div><div class="value" id="ob-M2n">–</div></div>
           <div class="row"><div class="label">M₂</div><div class="value" id="ob-M2">–</div></div>
@@ -150,32 +171,14 @@
         <h2>Results</h2>
         <div class="results-table">
           <div class="row"><div class="label">ν(M₁) (deg)</div><div class="value" id="pm-nu1">–</div></div>
+          <div class="row"><div class="label">μ₁ (deg)</div><div class="value" id="pm-mu1">–</div></div>
           <div class="row"><div class="label">ν(M₂) (deg)</div><div class="value" id="pm-nu2">–</div></div>
+          <div class="row"><div class="label">μ₂ (deg)</div><div class="value" id="pm-mu2">–</div></div>
           <div class="row"><div class="label">M₂</div><div class="value" id="pm-M2">–</div></div>
           <div class="row"><div class="label">p₂/p₁</div><div class="value" id="pm-p2p1">–</div></div>
           <div class="row"><div class="label">ρ₂/ρ₁</div><div class="value" id="pm-rho2rho1">–</div></div>
           <div class="row"><div class="label">T₂/T₁</div><div class="value" id="pm-T2T1">–</div></div>
         </div>
-      </section>
-       
-      <section class="diagram-section">
-        <h2>Expansion Wave Geometry</h2>
-        <svg id="pm-diagram" width="640" height="400" viewBox="0 0 640 400">
-          <line x1="80" y1="200" x2="260" y2="200" stroke="#ccc" stroke-width="3" marker-end="url(#arrow)" />
-          <text x="100" y="180" font-size="18" fill="#ccc">M₁</text>
-          
-          <line id="pm-wall1" x1="280" y1="200" x2="500" y2="200" stroke="#00aaff" stroke-width="6" />
-          <line id="pm-wall2" x1="280" y1="200" x2="420" y2="280" stroke="#00aaff" stroke-width="6" />
-          
-          <line id="pm-fan1" x1="280" y1="200" x2="520" y2="100" stroke="#ff5050" stroke-width="2" />
-          <line id="pm-fan2" x1="280" y1="200" x2="520" y2="200" stroke="#ff5050" stroke-width="2" />
-          <line id="pm-fan3" x1="280" y1="200" x2="520" y2="300" stroke="#ff5050" stroke-width="2" />
-          
-          <path id="pm-thetaArc" d="" stroke="#00aaff" stroke-width="2" fill="none" />
-          <text id="pm-thetaLabel" x="0" y="0" font-size="15" fill="#00aaff">θ</text>
-          <path id="pm-mu1Arc" d="" stroke="#ff5050" stroke-width="2" fill="none" />
-          <text id="pm-mu1Label" x="0" y="0" font-size="15" fill="#ff5050">μ₁</text>
-        </svg>
       </section>
     </section>
 

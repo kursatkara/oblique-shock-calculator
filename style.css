@@ -36,11 +36,41 @@ h1, h2 {
   margin-top: 0;
 }
 
-/* --- New Navigation Styles --- */
+/* --- New Global Gamma Styles --- */
+.global-settings {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #181818;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.global-settings label {
+  font-weight: 600;
+  color: var(--muted);
+}
+.global-settings input {
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--text);
+  background-color: #0e0e0e;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  width: 70px;
+  padding: 0.25rem 0.5rem;
+  margin: 0;
+}
+
+
+/* --- Navigation Styles --- */
 .calculator-nav {
   display: flex;
   border-bottom: 2px solid var(--border);
   margin-bottom: 2rem;
+  flex-wrap: wrap;
 }
 
 .nav-btn {
@@ -54,6 +84,8 @@ h1, h2 {
   transition: all 0.2s ease;
   border-bottom: 3px solid transparent;
   margin-bottom: -2px; /* Align with parent border */
+  flex-grow: 1;
+  text-align: center;
 }
 
 .nav-btn:hover {
@@ -80,7 +112,7 @@ h1, h2 {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Re-usable Component Styles (from original) --- */
+/* --- Re-usable Component Styles --- */
 label {
   font-weight: 600;
   color: var(--text);
@@ -91,6 +123,13 @@ label {
   padding: 1rem 1.25rem;
   border-radius: 10px;
   border: 1px solid var(--border);
+}
+
+.input-hint {
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0;
 }
 
 .input-row {
@@ -186,6 +225,11 @@ svg text {
   dominant-baseline: middle;
   text-anchor: middle;
   user-select: none;
+}
+
+/* --- Readability fix for Oblique Shock labels --- */
+#ob-thetaLabel, #ob-betaLabel {
+    text-anchor: start;
 }
 
 .diagram-caption {
