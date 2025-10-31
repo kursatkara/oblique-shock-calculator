@@ -5,14 +5,15 @@ body {
   color: #222;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
   margin: 0;
+  padding: 2rem 0;
 }
 
 main {
   background: #ffffff;
-  max-width: 720px;
+  max-width: 760px;
   width: 90%;
   padding: 2rem;
   border-radius: 12px;
@@ -20,17 +21,32 @@ main {
 }
 
 /* -------- Typography -------- */
-h1, h2 {
+h1,
+h2 {
   text-align: center;
   color: #004080;
   margin-top: 0;
 }
 
-/* -------- Inputs -------- */
+/* -------- Input Section -------- */
+.input-section {
+  margin-bottom: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem 1rem 1.25rem;
+  background-color: #fafcff;
+}
+
+.input-row {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.75rem;
+}
+
 label {
-  display: block;
-  margin-top: 1rem;
   font-weight: 600;
+  font-size: 0.9rem;
+  color: #1a1a1a;
 }
 
 input {
@@ -40,9 +56,9 @@ input {
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 1rem;
+  font-family: inherit;
 }
 
-/* -------- Button -------- */
 button {
   width: 100%;
   margin-top: 1.2rem;
@@ -61,7 +77,6 @@ button:hover {
   background: #0066cc;
 }
 
-/* -------- Warning Message -------- */
 .warning {
   color: #cc0000;
   font-size: 0.9rem;
@@ -87,27 +102,35 @@ button:hover {
   gap: 0.4rem;
   border-top: 1px solid #e0e0e0;
   border-bottom: 1px solid #e0e0e0;
+  background-color: #fff;
+  border-radius: 8px;
 }
 
 .results-table .row {
   display: flex;
   justify-content: space-between;
-  padding: 0.3rem 0.5rem;
+  padding: 0.4rem 0.75rem;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.results-table .row:last-child {
+  border-bottom: none;
 }
 
 .results-table .label {
   flex: 1;
   font-weight: 500;
   color: #333;
+  font-size: 0.9rem;
 }
 
 .results-table .value {
-  flex: 0 0 6em;
+  flex: 0 0 7em;
   text-align: right;
   font-family: monospace;
   font-weight: 600;
   color: #003366;
+  font-size: 0.95rem;
 }
 
 .results-table .row:hover {
@@ -143,8 +166,7 @@ svg text {
 /* -------- Footer -------- */
 footer {
   text-align: center;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   font-size: 0.8rem;
   color: #888;
 }
-
