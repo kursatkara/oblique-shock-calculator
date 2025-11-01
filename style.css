@@ -216,9 +216,17 @@ input:checked + .slider:before {
   transition: all 0.2s ease;
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
+  flex-basis: 0;
   flex-grow: 1;
   text-align: center;
 }
+/* Make 5th button wrap nicely */
+.nav-btn:nth-child(5) {
+  flex-grow: 0;
+  min-width: 100%;
+}
+
+
 .nav-btn:hover {
   color: var(--text-main);
 }
@@ -313,12 +321,12 @@ button:hover {
     background: transparent;
     border-color: var(--text-muted); /* Use border-color instead of border */
     color: var(--text-muted);
-    flex-grow: 1;
+    flex-grow: 1; /* Changed from 1 */
 }
 .button-group .btn-primary {
     margin-top: 0;
     border-color: var(--accent); /* Use border-color */
-    flex-grow: 1;
+    flex-grow: 1; /* Changed from 2 */
 }
 
 .warning {

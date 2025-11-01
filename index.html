@@ -38,6 +38,7 @@
       <button class="nav-btn" data-calculator="normal-shock">Normal Shock</button>
       <button class="nav-btn" data-calculator="oblique-shock">Oblique Shock</button>
       <button class="nav-btn" data-calculator="prandtl-meyer">Prandtl-Meyer</button>
+      <button class="nav-btn" data-calculator="wedge-airfoil">Wedge Airfoil</button>
     </nav>
 
     <!-- ===== 1. Isentropic Flow Calculator ===== -->
@@ -133,7 +134,7 @@
         </div>
         <div class="input-row">
           <label for="ob-theta">Deflection angle θ (deg)</label>
-          <input type="number" id="ob-theta" step="0.1" value="20" min="0" max="90" />
+          <input type="number" id="ob-theta" step="0.1" value="15" min="0" max="90" />
         </div>
         <div class="input-row">
           <label for="ob-beta">Shock angle β (deg)</label>
@@ -208,6 +209,43 @@
       </section>
     </section>
 
+    <!-- ===== 5. Wedge Airfoil Calculator ===== -->
+    <section id="wedge-airfoil-calculator" class="calculator-panel">
+      <section class="input-section">
+        <div class="input-row">
+          <label for="wa-M1">Freestream Mach (M₁)</label>
+          <input type="number" id="wa-M1" step="0.1" value="5.0" min="1.01" />
+        </div>
+        <div class="input-row">
+          <label for="wa-delta">Wedge Half-Angle (δ deg)</label>
+          <input type="number" id="wa-delta" step="0.1" value="15" min="0" max="90" />
+        </div>
+        <div class="input-row">
+          <label for="wa-alpha">Angle of Attack (α deg)</label>
+          <input type="number" id="wa-alpha" step="0.1" value="0" min="-90" max="90" />
+        </div>
+        <button id="wa-computeBtn">Compute</button>
+        <p id="wa-warning" class="warning"></p>
+      </section>
+
+      <section class="results">
+        <h2>Lower Surface (Windward)</h2>
+        <div class="results-table">
+          <div class="row"><div class="label">Deflection (δ + α)</div><div class="value" id="wa-theta-lower">–</div></div>
+          <div class="row"><div class="label">P_lower / P₁</div><div class="value" id="wa-p-lower-p1">–</div></div>
+        </div>
+      </section>
+
+      <section class="results">
+        <h2>Upper Surface (Leeward)</h2>
+        <div class="results-table">
+          <div class="row"><div class="label">Angle (δ - α)</div><div class="value" id="wa-theta-upper">–</div></div>
+          <div class="row"><div class="label">Type</div><div class="value" id="wa-type-upper">–</div></div>
+          <div class="row"><div class="label">P_upper / P₁</div><div class="value" id="wa-p-upper-p1">–</div></div>
+        </div>
+      </section>
+    </section>
+
   </main>
 
   <!-- Global Definitions (for SVGs) -->
@@ -229,3 +267,4 @@
   <script src="script.js"></script>
 </body>
 </html>
+

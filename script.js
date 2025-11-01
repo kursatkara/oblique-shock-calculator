@@ -54,7 +54,6 @@ function flashResults(panelId) {
         el.classList.remove('is-new-result-row');
         void el.offsetWidth; // Trigger reflow
         el.classList.add('is-new-result-row');
-        // Animation auto-removes itself
     });
 }
 
@@ -77,8 +76,8 @@ const isentropic = {
   M_from_A: (A_Astar, g, supersonic = false) => {
     if (A_Astar < 1) return NaN;
     if (A_Astar === 1) return 1;
-    // *** FIX: Improved guess for subsonic branch ***
-    const guess = supersonic ? (1 + 0.5 * A_Astar) : (1 / (A_Astar**0.5)); // Better guess
+    // Use a better guess: M ≈ 1/A* for subsonic, M ≈ 1 + 0.5(A/A*) for supersonic
+    const guess = supersonic ? (1 + 0.5 * A_Astar) : (1 / (A_Astar**0.5));
     return newtonRaphson(isentropic.A_Astar_func, isentropic.A_Astar_deriv, guess, A_Astar, g);
   }
 };
@@ -265,7 +264,7 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-wedgeRamp").setAttribute("x2", x0 + Lwedge * Math.cos(thetaRad));
     document.getElementById("ob-wedgeRamp").setAttribute("y2", y0 - Lwedge * Math.sin(thetaRad));
     document.getElementById("ob-thetaArc").setAttribute("d", arcPath(x0, y0, 40, 0, thetaRad));
-    // *** Updated position to be further right ***
+    // Updated position to be further right
     document.getElementById("ob-thetaLabel").setAttribute("x", x0 + 135 * Math.cos(thetaRad / 2));
     document.getElementById("ob-thetaLabel").setAttribute("y", y0 - 135 * Math.sin(thetaRad / 2));
     document.getElementById("ob-thetaLabel").textContent = `θ=${thetaDeg.toFixed(1)}°`;
@@ -282,7 +281,7 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-shockLine").setAttribute("x2", x0 + Lshock * Math.cos(betaRad));
     document.getElementById("ob-shockLine").setAttribute("y2", y0 - Lshock * Math.sin(betaRad));
     document.getElementById("ob-betaArc").setAttribute("d", arcPath(x0, y0, 60, 0, betaRad));
-    // *** Updated position to be further right ***
+    // Updated position to be further right
     document.getElementById("ob-betaLabel").setAttribute("x", x0 + 160 * Math.cos(betaRad / 2));
     document.getElementById("ob-betaLabel").setAttribute("y", y0 - 160 * Math.sin(betaRad / 2));
     document.getElementById("ob-betaLabel").textContent = `β=${betaDeg.toFixed(1)}°`;
@@ -550,6 +549,81 @@ function calculatePrandtlMeyer() {
   }
 }
 
+// --- 5. Wedge Airfoil Controller ---
+function calculateWedgeAirfoil() {
+    const g = getGamma();
+    const M1 = parseFloat(document.getElementById("wa-M1").value);
+    const delta = parseFloat(document.getElementById("wa-delta").value);
+    const alpha = parseFloat(document.getElementById("wa-alpha").value);
+    const warning = document.getElementById("wa-warning");
+    warning.textContent = "";
+
+    const lowerResultIDs = ["wa-theta-lower", "wa-p-lower-p1"];
+    const upperResultIDs = ["wa-theta-upper", "wa-type-upper", "wa-p-upper-p1"];
+    
+    try {
+        if (isNaN(M1) || M1 <= 1) throw new Error("M₁ must be > 1.");
+        if (isNaN(delta)) throw new Error("Wedge Half-Angle (δ) must be a number.");
+        if (isNaN(alpha)) throw new Error("Angle of Attack (α) must be a number.");
+
+        // --- Lower Surface (Compression) ---
+        const theta_lower = delta + alpha;
+        if (theta_lower < 0) {
+            throw new Error("Lower surface is expanding (δ + α < 0). This calculator only supports attached compression.");
+        }
+        const beta_lower_rad = ob_beta_from_M1_theta(M1, theta_lower, g);
+        if (isNaN(beta_lower_rad)) {
+            throw new Error("Lower surface shock is detached (θ_lower > θ_max).");
+        }
+        const { p2p1: p_lower_p1 } = obliqueShockRatios(M1, beta_lower_rad, deg2rad(theta_lower), g);
+        
+        updateText("wa-theta-lower", theta_lower, 2);
+        updateText("wa-p-lower-p1", p_lower_p1, 4);
+
+        // --- Upper Surface (Compression or Expansion) ---
+        const theta_eff = delta - alpha;
+        let p_upper_p1;
+
+        if (theta_eff > 0) {
+            // Compression
+            const beta_upper_rad = ob_beta_from_M1_theta(M1, theta_eff, g);
+            if (isNaN(beta_upper_rad)) {
+                throw new Error("Upper surface shock is detached (θ_upper > θ_max).");
+            }
+            const { p2p1 } = obliqueShockRatios(M1, beta_upper_rad, deg2rad(theta_eff), g);
+            p_upper_p1 = p2p1;
+            updateText("wa-theta-upper", theta_eff, 2);
+            updateText("wa-type-upper", "Shock", 0);
+        } else if (theta_eff < 0) {
+            // Expansion
+            const theta_exp = -theta_eff;
+            const nu1 = prandtlMeyer.nu(M1, g);
+            const nu2 = nu1 + theta_exp;
+            const nu_max = prandtlMeyer.nu(Infinity, g);
+            if (nu2 > nu_max) {
+                throw new Error(`Upper expansion angle is too large. Max ν is ${nu_max.toFixed(1)}°.`);
+            }
+            const M2_upper = prandtlMeyer.M_from_nu(nu2, g);
+            p_upper_p1 = isentropic.p0_p(M1, g) / isentropic.p0_p(M2_upper, g);
+            updateText("wa-theta-upper", theta_exp, 2);
+            updateText("wa-type-upper", "Expansion", 0);
+        } else {
+            // theta_eff = 0
+            p_upper_p1 = 1.0;
+            updateText("wa-theta-upper", 0, 2);
+            updateText("wa-type-upper", "Aligned", 0);
+        }
+        
+        updateText("wa-p-upper-p1", p_upper_p1, 4);
+        flashResults("wedge-airfoil");
+
+    } catch (err) {
+        warning.textContent = err.message;
+        clearResults("wa", lowerResultIDs);
+        clearResults("wa", upperResultIDs);
+    }
+}
+
 
 // ========================================================================
 // === Initialization =====================================================
@@ -560,6 +634,7 @@ function runAllCalculators() {
   calculateNormalShock();
   // Don't run oblique shock on load
   calculatePrandtlMeyer();
+  calculateWedgeAirfoil();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -628,6 +703,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("ob-clearBtn").addEventListener("click", clearObliqueInputs);
   
   document.getElementById("pm-computeBtn").addEventListener("click", calculatePrandtlMeyer);
+
+  document.getElementById("wa-computeBtn").addEventListener("click", calculateWedgeAirfoil);
   
   document.getElementById("gamma").addEventListener("change", runAllCalculators);
 
