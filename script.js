@@ -54,9 +54,7 @@ function flashResults(panelId) {
         el.classList.remove('is-new-result-row');
         void el.offsetWidth; // Trigger reflow
         el.classList.add('is-new-result-row');
-        setTimeout(() => {
-            el.classList.remove('is-new-result-row');
-        }, 800); // Must match animation duration
+        // Animation auto-removes itself
     });
 }
 
@@ -80,7 +78,7 @@ const isentropic = {
     if (A_Astar < 1) return NaN;
     if (A_Astar === 1) return 1;
     // *** FIX: Improved guess for subsonic branch ***
-    const guess = supersonic ? (1 + 0.5 * A_Astar) : (1 / A_Astar);
+    const guess = supersonic ? (1 + 0.5 * A_Astar) : (1 / (A_Astar**0.5)); // Better guess
     return newtonRaphson(isentropic.A_Astar_func, isentropic.A_Astar_deriv, guess, A_Astar, g);
   }
 };
@@ -636,3 +634,4 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Run calculators on initial load ---
   runAllCalculators();
 });
+
