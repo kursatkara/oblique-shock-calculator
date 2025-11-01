@@ -49,11 +49,14 @@ function arcPath(cx, cy, r, a1, a2) {
 
 // Helper for flashing new results
 function flashResults(panelId) {
-    const results = document.querySelectorAll(`#${panelId}-calculator .results .value`);
+    const results = document.querySelectorAll(`#${panelId}-calculator .results .row`);
     results.forEach(el => {
-        el.classList.remove('is-new-result');
+        el.classList.remove('is-new-result-row');
         void el.offsetWidth; // Trigger reflow
-        el.classList.add('is-new-result');
+        el.classList.add('is-new-result-row');
+        setTimeout(() => {
+            el.classList.remove('is-new-result-row');
+        }, 800); // Must match animation duration
     });
 }
 
@@ -76,7 +79,8 @@ const isentropic = {
   M_from_A: (A_Astar, g, supersonic = false) => {
     if (A_Astar < 1) return NaN;
     if (A_Astar === 1) return 1;
-    const guess = supersonic ? (1 + 2 * A_Astar) : (1 - 0.5 * A_Astar);
+    // *** FIX: Improved guess for subsonic branch ***
+    const guess = supersonic ? (1 + 0.5 * A_Astar) : (1 / A_Astar);
     return newtonRaphson(isentropic.A_Astar_func, isentropic.A_Astar_deriv, guess, A_Astar, g);
   }
 };
@@ -264,8 +268,8 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-wedgeRamp").setAttribute("y2", y0 - Lwedge * Math.sin(thetaRad));
     document.getElementById("ob-thetaArc").setAttribute("d", arcPath(x0, y0, 40, 0, thetaRad));
     // *** Updated position to be further right ***
-    document.getElementById("ob-thetaLabel").setAttribute("x", x0 + 85 * Math.cos(thetaRad / 2));
-    document.getElementById("ob-thetaLabel").setAttribute("y", y0 - 85 * Math.sin(thetaRad / 2));
+    document.getElementById("ob-thetaLabel").setAttribute("x", x0 + 135 * Math.cos(thetaRad / 2));
+    document.getElementById("ob-thetaLabel").setAttribute("y", y0 - 135 * Math.sin(thetaRad / 2));
     document.getElementById("ob-thetaLabel").textContent = `θ=${thetaDeg.toFixed(1)}°`;
   }
 
@@ -281,8 +285,8 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-shockLine").setAttribute("y2", y0 - Lshock * Math.sin(betaRad));
     document.getElementById("ob-betaArc").setAttribute("d", arcPath(x0, y0, 60, 0, betaRad));
     // *** Updated position to be further right ***
-    document.getElementById("ob-betaLabel").setAttribute("x", x0 + 110 * Math.cos(betaRad / 2));
-    document.getElementById("ob-betaLabel").setAttribute("y", y0 - 110 * Math.sin(betaRad / 2));
+    document.getElementById("ob-betaLabel").setAttribute("x", x0 + 160 * Math.cos(betaRad / 2));
+    document.getElementById("ob-betaLabel").setAttribute("y", y0 - 160 * Math.sin(betaRad / 2));
     document.getElementById("ob-betaLabel").textContent = `β=${betaDeg.toFixed(1)}°`;
   }
 }
@@ -542,8 +546,7 @@ function calculatePrandtlMeyer() {
     updateText("pm-T2T1", T2T1);
     flashResults("prandtl-meyer");
 
-  } catch (err)
- {
+  } catch (err) {
     warning.textContent = err.message;
     clearResults("pm", resultIDs);
   }
@@ -596,22 +599,24 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Font Size Control ---
   const fontIncrease = document.getElementById("font-increase");
   const fontDecrease = document.getElementById("font-decrease");
-  let currentFontSize = localStorage.getItem("font-size") || "md";
-  document.body.dataset.fontSize = currentFontSize;
-
-  const setFontSize = (size) => {
-    currentFontSize = size;
+  const fontSizes = ["xs", "sm", "md", "lg", "xl"];
+  let currentSizeIndex = fontSizes.indexOf(localStorage.getItem("font-size") || "md");
+  if (currentSizeIndex === -1) currentSizeIndex = 2; // Default to 'md'
+  
+  const setFontSize = (index) => {
+    if (index < 0) index = 0;
+    if (index >= fontSizes.length) index = fontSizes.length - 1;
+    currentSizeIndex = index;
+    const size = fontSizes[index];
     document.body.dataset.fontSize = size;
     localStorage.setItem("font-size", size);
   };
-  fontIncrease.addEventListener("click", () => {
-    if (currentFontSize === "sm") setFontSize("md");
-    else if (currentFontSize === "md") setFontSize("lg");
-  });
-  fontDecrease.addEventListener("click", () => {
-    if (currentFontSize === "lg") setFontSize("md");
-    else if (currentFontSize === "md") setFontSize("sm");
-  });
+  
+  fontIncrease.addEventListener("click", () => setFontSize(currentSizeIndex + 1));
+  fontDecrease.addEventListener("click", () => setFontSize(currentSizeIndex - 1));
+  
+  // Set initial font size
+  setFontSize(currentSizeIndex);
 
 
   // --- Setup Calculator Event Listeners ---

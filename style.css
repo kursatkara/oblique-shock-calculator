@@ -9,6 +9,8 @@ body[data-theme="light"] {
   --border: #dee2e6;
   --input-bg: #f8f9fa;
   --accent-bg: #e6f2ff;
+  --accent-flash: #007bff;
+  --card-flash: #ffffff;
   --shadow-color: rgba(0, 0, 0, 0.1);
 }
 
@@ -23,6 +25,8 @@ body[data-theme="dark"] {
   --border: #2a2a2a;
   --input-bg: #0e0e0e;
   --accent-bg: #00aaff1a;
+  --accent-flash: #00aaff;
+  --card-flash: #1f1f1f;
   --shadow-color: rgba(0, 0, 0, 0.3);
 }
 
@@ -32,8 +36,11 @@ body[data-theme="dark"] {
 }
 
 /* --- Font Size Scaling --- */
-body[data-font-size="sm"] { font-size: 14px; }
+body[data-font-size="xs"] { font-size: 14px; }
+body[data-font-size="sm"] { font-size: 15px; }
+body[data-font-size="md"] { font-size: 16px; }
 body[data-font-size="lg"] { font-size: 18px; }
+body[data-font-size="xl"] { font-size: 20px; }
 
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -65,6 +72,7 @@ main {
   align-items: center;
   margin-bottom: 1.5rem;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 h1 {
@@ -102,6 +110,7 @@ h2 {
   line-height: 1;
   font-size: 1rem;
   margin: 0;
+  box-sizing: border-box; /* Ensures padding/border don't change height */
 }
 .font-size-control button:hover {
   background: var(--input-bg);
@@ -201,7 +210,7 @@ input:checked + .slider:before {
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 1rem; /* Scales with body font size */
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -261,6 +270,7 @@ input, select {
   font-family: inherit;
   font-size: 1rem;
   transition: border-color 0.2s ease;
+  box-sizing: border-box; /* Ensures padding/border don't change height */
 }
 input:focus, select:focus {
   outline: none;
@@ -280,7 +290,7 @@ button {
   margin-top: 1.2rem;
   padding: 0.6rem;
   width: 100%;
-  border: none;
+  border: 1px solid transparent; /* Ensures consistent height */
   background: var(--accent);
   color: #fff;
   border-radius: 6px;
@@ -288,6 +298,7 @@ button {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease;
+  box-sizing: border-box; /* Ensures padding/border don't change height */
 }
 button:hover {
   filter: brightness(1.1);
@@ -300,13 +311,14 @@ button:hover {
 }
 .button-group .btn-secondary {
     background: transparent;
-    border: 1px solid var(--text-muted);
+    border-color: var(--text-muted); /* Use border-color instead of border */
     color: var(--text-muted);
-    flex-grow: 1; /* Changed from 1 */
+    flex-grow: 1;
 }
 .button-group .btn-primary {
     margin-top: 0;
-    flex-grow: 1; /* Changed from 2 */
+    border-color: var(--accent); /* Use border-color */
+    flex-grow: 1;
 }
 
 .warning {
@@ -334,6 +346,10 @@ button:hover {
   justify-content: space-between;
   padding: 0.4rem 0.3rem;
   border-bottom: 1px solid var(--border);
+  border-radius: 3px;
+  /* Add margin/padding compensation to allow flash to fill row */
+  margin: 0 -0.3rem;
+  padding: 0.4rem 0.6rem;
 }
 .results-table .row:last-child {
   border-bottom: none;
@@ -345,24 +361,16 @@ button:hover {
   font-family: monospace;
   font-weight: 600;
   color: var(--accent);
-  border-radius: 3px;
-  padding: 0 0.25rem; /* Add padding for flash to be visible */
-  margin: 0 -0.25rem; /* Compensate for padding */
 }
 
 /* --- Result Flash Animation --- */
-.is-new-result {
-  animation: flash 0.8s ease-out;
+.is-new-result-row {
+  animation: flash-row 0.8s ease-out;
 }
-@keyframes flash {
-  0% { 
-    background-color: var(--accent); 
-    color: var(--card);
-  }
-  100% { 
-    background-color: transparent; 
-    color: var(--accent);
-  }
+@keyframes flash-row {
+  0% { background-color: var(--accent-bg); }
+  30% { background-color: var(--accent-bg); }
+  100% { background-color: transparent; }
 }
 
 

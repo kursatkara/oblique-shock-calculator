@@ -26,11 +26,13 @@
       </div>
     </header>
 
+    <!-- Global Gamma Setting -->
     <section class="global-settings">
       <label for="gamma">Ratio of Specific Heats (γ)</label>
       <input type="number" id="gamma" value="1.4" step="0.01" min="1.01">
     </section>
 
+    <!-- Calculator Navigation -->
     <nav class="calculator-nav">
       <button class="nav-btn active" data-calculator="isentropic">Isentropic Flow</button>
       <button class="nav-btn" data-calculator="normal-shock">Normal Shock</button>
@@ -38,6 +40,7 @@
       <button class="nav-btn" data-calculator="prandtl-meyer">Prandtl-Meyer</button>
     </nav>
 
+    <!-- ===== 1. Isentropic Flow Calculator ===== -->
     <section id="isentropic-calculator" class="calculator-panel active">
       <section class="input-section">
         <div class="input-row">
@@ -53,7 +56,7 @@
         </div>
         <div class="input-row">
           <label for="is-inputValue">Input Value:</label>
-          <input type="number" id="is-inputValue" step="0.01" value="2.0" />
+          <input type="number" id="is-inputValue" step="0.01" value="5.0" />
         </div>
         <button id="is-computeBtn">Compute</button>
         <p id="is-warning" class="warning"></p>
@@ -71,6 +74,7 @@
       </section>
     </section>
 
+    <!-- ===== 2. Normal Shock Calculator ===== -->
     <section id="normal-shock-calculator" class="calculator-panel">
       <section class="input-section">
         <div class="input-row">
@@ -109,16 +113,17 @@
       <section class="diagram-section">
         <svg id="ns-diagram" width="640" height="200" viewBox="0 0 640 200">
           <line x1="80" y1="100" x2="310" y2="100" stroke="var(--text-muted)" stroke-width="3" marker-end="url(#arrow)" />
-          <line x1="330" y1="100" x2="560" y2="100" stroke="var(--text-muted)" stroke-width="3" marker-end="url(#arrow)" />
+          <line x1="330" y1="100" x2="500" y2="100" stroke="var(--text-muted)" stroke-width="3" marker-end="url(#arrow-short)" />
           <line id="ns-shockLine" x1="320" y1="30" x2="320" y2="170" stroke="var(--danger)" stroke-width="4" />
           <text x="180" y="80" font-size="18" fill="var(--text-muted)">M₁</text>
-          <text x="450" y="80" font-size="18" fill="var(--text-muted)">M₂</text>
+          <text x="415" y="80" font-size="18" fill="var(--text-muted)">M₂</text>
           <text id="ns-M1-label" x="180" y="120" font-size="15" fill="var(--text-main)"></text>
-          <text id="ns-M2-label" x="450" y="120" font-size="15" fill="var(--text-main)"></text>
+          <text id="ns-M2-label" x="415" y="120" font-size="15" fill="var(--text-main)"></text>
         </svg>
       </section>
     </section>
 
+    <!-- ===== 3. Oblique Shock Calculator ===== -->
     <section id="oblique-shock-calculator" class="calculator-panel">
       <section class="input-section">
         <p class="input-hint">Enter any two values to calculate the third.</p>
@@ -173,6 +178,7 @@
       </section>
     </section>
 
+    <!-- ===== 4. Prandtl-Meyer Calculator ===== -->
     <section id="prandtl-meyer-calculator" class="calculator-panel">
       <section class="input-section">
         <div class="input-row">
@@ -204,10 +210,14 @@
 
   </main>
 
+  <!-- Global Definitions (for SVGs) -->
   <svg width="0" height="0" style="position:absolute">
     <defs>
       <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
         <polygon points="0,0 10,5 0,10" fill="var(--text-muted)" />
+      </marker>
+      <marker id="arrow-short" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+        <polygon points="0,0 7,3.5 0,7" fill="var(--text-muted)" />
       </marker>
     </defs>
   </svg>
