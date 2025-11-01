@@ -10,13 +10,19 @@
   <main>
     <header class="main-header">
       <h1>Gas Dynamics Calculator</h1>
-      <div class="theme-toggle">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-        <label class="toggle-switch">
-          <input type="checkbox" id="theme-toggle-checkbox">
-          <span class="slider"></span>
-        </label>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      <div class="controls-group">
+        <div class="font-size-control">
+          <button id="font-decrease" title="Decrease font size">A-</button>
+          <button id="font-increase" title="Increase font size">A+</button>
+        </div>
+        <div class="theme-toggle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <label class="toggle-switch">
+            <input type="checkbox" id="theme-toggle-checkbox">
+            <span class="slider"></span>
+          </label>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        </div>
       </div>
     </header>
 
@@ -102,11 +108,11 @@
 
       <section class="diagram-section">
         <svg id="ns-diagram" width="640" height="200" viewBox="0 0 640 200">
-          <line x1="80" y1="100" x2="310" y2="100" stroke="var(--muted)" stroke-width="3" marker-end="url(#arrow)" />
-          <line x1="330" y1="100" x2="560" y2="100" stroke="var(--muted)" stroke-width="3" marker-end="url(#arrow)" />
+          <line x1="80" y1="100" x2="310" y2="100" stroke="var(--text-muted)" stroke-width="3" marker-end="url(#arrow)" />
+          <line x1="330" y1="100" x2="560" y2="100" stroke="var(--text-muted)" stroke-width="3" marker-end="url(#arrow)" />
           <line id="ns-shockLine" x1="320" y1="30" x2="320" y2="170" stroke="var(--danger)" stroke-width="4" />
-          <text x="180" y="80" font-size="18" fill="var(--muted)">M₁</text>
-          <text x="450" y="80" font-size="18" fill="var(--muted)">M₂</text>
+          <text x="180" y="80" font-size="18" fill="var(--text-muted)">M₁</text>
+          <text x="450" y="80" font-size="18" fill="var(--text-muted)">M₂</text>
           <text id="ns-M1-label" x="180" y="120" font-size="15" fill="var(--text-main)"></text>
           <text id="ns-M2-label" x="450" y="120" font-size="15" fill="var(--text-main)"></text>
         </svg>
@@ -151,8 +157,8 @@
       <section class="diagram-section">
         <h2>Wave Geometry</h2>
         <svg id="ob-shockDiagram" width="640" height="400" viewBox="0 0 640 400">
-          <line x1="80" y1="320" x2="260" y2="320" stroke="var(--muted)" stroke-width="3" marker-end="url(#arrow)" />
-          <text x="100" y="300" font-size="18" fill="var(--muted)">M₁</text>
+          <line x1="80" y1="320" x2="260" y2="320" stroke="var(--text-muted)" stroke-width="3" marker-end="url(#arrow)" />
+          <text x="100" y="300" font-size="18" fill="var(--text-muted)">M₁</text>
           <line id="ob-wedgeBase" x1="280" y1="320" x2="500" y2="320" stroke="var(--accent)" stroke-width="6" />
           <line id="ob-wedgeRamp" x1="280" y1="320" x2="420" y2="280" stroke="var(--accent)" stroke-width="6" />
           <line id="ob-shockLine" x1="280" y1="320" x2="520" y2="200" stroke="var(--danger)" stroke-width="4" />
@@ -201,13 +207,13 @@
   <svg width="0" height="0" style="position:absolute">
     <defs>
       <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
-        <polygon points="0,0 10,5 0,10" fill="var(--muted)" />
+        <polygon points="0,0 10,5 0,10" fill="var(--text-muted)" />
       </marker>
     </defs>
   </svg>
   
   <footer>
-    <p>© 2025 Gas Dynamics Calculator | Built by Kursat Kara</p>
+    <p>© 2025 Gas Dynamics Calculator | Built by Kursat Kara with the help of ChatGPT and Gemini</p>
   </footer>
 
   <script src="script.js"></script>

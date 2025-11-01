@@ -47,17 +47,13 @@ function arcPath(cx, cy, r, a1, a2) {
   return `M ${x1},${y1} A ${r},${r} 0 0 0 ${x2},${y2}`;
 }
 
-// *** NEW *** Helper for flashing new results
+// Helper for flashing new results
 function flashResults(panelId) {
     const results = document.querySelectorAll(`#${panelId}-calculator .results .value`);
     results.forEach(el => {
         el.classList.remove('is-new-result');
-        // Trigger reflow
-        void el.offsetWidth;
+        void el.offsetWidth; // Trigger reflow
         el.classList.add('is-new-result');
-        setTimeout(() => {
-            el.classList.remove('is-new-result');
-        }, 800); // Animation duration
     });
 }
 
@@ -267,8 +263,9 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-wedgeRamp").setAttribute("x2", x0 + Lwedge * Math.cos(thetaRad));
     document.getElementById("ob-wedgeRamp").setAttribute("y2", y0 - Lwedge * Math.sin(thetaRad));
     document.getElementById("ob-thetaArc").setAttribute("d", arcPath(x0, y0, 40, 0, thetaRad));
-    document.getElementById("ob-thetaLabel").setAttribute("x", x0 + 65 * Math.cos(thetaRad / 2));
-    document.getElementById("ob-thetaLabel").setAttribute("y", y0 - 65 * Math.sin(thetaRad / 2));
+    // *** Updated position to be further right ***
+    document.getElementById("ob-thetaLabel").setAttribute("x", x0 + 85 * Math.cos(thetaRad / 2));
+    document.getElementById("ob-thetaLabel").setAttribute("y", y0 - 85 * Math.sin(thetaRad / 2));
     document.getElementById("ob-thetaLabel").textContent = `θ=${thetaDeg.toFixed(1)}°`;
   }
 
@@ -283,8 +280,9 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-shockLine").setAttribute("x2", x0 + Lshock * Math.cos(betaRad));
     document.getElementById("ob-shockLine").setAttribute("y2", y0 - Lshock * Math.sin(betaRad));
     document.getElementById("ob-betaArc").setAttribute("d", arcPath(x0, y0, 60, 0, betaRad));
-    document.getElementById("ob-betaLabel").setAttribute("x", x0 + 90 * Math.cos(betaRad / 2));
-    document.getElementById("ob-betaLabel").setAttribute("y", y0 - 90 * Math.sin(betaRad / 2));
+    // *** Updated position to be further right ***
+    document.getElementById("ob-betaLabel").setAttribute("x", x0 + 110 * Math.cos(betaRad / 2));
+    document.getElementById("ob-betaLabel").setAttribute("y", y0 - 110 * Math.sin(betaRad / 2));
     document.getElementById("ob-betaLabel").textContent = `β=${betaDeg.toFixed(1)}°`;
   }
 }
@@ -430,7 +428,6 @@ function calculateObliqueShock() {
   const warning = document.getElementById("ob-warning");
   warning.textContent = "";
   
-  // Clear all previous calculated styles
   const allInputs = [document.getElementById("ob-M1"), document.getElementById("ob-theta"), document.getElementById("ob-beta")];
   allInputs.forEach(el => el.classList.remove("is-calculated-input"));
 
@@ -478,7 +475,6 @@ function calculateObliqueShock() {
     const { Mn1, Mn2, M2, p2p1, rho2rho1, T2T1, p02p01 } = obliqueShockRatios(M1, betaRad, thetaRad, g);
     if (isNaN(M2)) throw new Error("Calculation failed. Check inputs.");
 
-    // Update all results AND inputs
     updateText("ob-M1", M1, 3);
     updateText("ob-theta", theta, 2);
     updateText("ob-beta", beta, 2);
@@ -546,7 +542,8 @@ function calculatePrandtlMeyer() {
     updateText("pm-T2T1", T2T1);
     flashResults("prandtl-meyer");
 
-  } catch (err) {
+  } catch (err)
+ {
     warning.textContent = err.message;
     clearResults("pm", resultIDs);
   }
@@ -560,7 +557,7 @@ function calculatePrandtlMeyer() {
 function runAllCalculators() {
   calculateIsentropic();
   calculateNormalShock();
-  // Don't run oblique shock on load, as its state is complex
+  // Don't run oblique shock on load
   calculatePrandtlMeyer();
 }
 
@@ -581,23 +578,41 @@ document.addEventListener("DOMContentLoaded", () => {
   const themeToggle = document.getElementById("theme-toggle-checkbox");
   const storedTheme = localStorage.getItem("theme");
   const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-
   const applyTheme = (theme) => {
     document.body.dataset.theme = theme;
     themeToggle.checked = (theme === "light");
   };
-
   if (storedTheme) {
     applyTheme(storedTheme);
   } else {
     applyTheme(prefersLight ? "light" : "dark");
   }
-
   themeToggle.addEventListener("change", () => {
     const newTheme = themeToggle.checked ? "light" : "dark";
     localStorage.setItem("theme", newTheme);
     applyTheme(newTheme);
   });
+
+  // --- Font Size Control ---
+  const fontIncrease = document.getElementById("font-increase");
+  const fontDecrease = document.getElementById("font-decrease");
+  let currentFontSize = localStorage.getItem("font-size") || "md";
+  document.body.dataset.fontSize = currentFontSize;
+
+  const setFontSize = (size) => {
+    currentFontSize = size;
+    document.body.dataset.fontSize = size;
+    localStorage.setItem("font-size", size);
+  };
+  fontIncrease.addEventListener("click", () => {
+    if (currentFontSize === "sm") setFontSize("md");
+    else if (currentFontSize === "md") setFontSize("lg");
+  });
+  fontDecrease.addEventListener("click", () => {
+    if (currentFontSize === "lg") setFontSize("md");
+    else if (currentFontSize === "md") setFontSize("sm");
+  });
+
 
   // --- Setup Calculator Event Listeners ---
   document.getElementById("is-computeBtn").addEventListener("click", calculateIsentropic);
