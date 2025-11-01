@@ -228,22 +228,59 @@
         <p id="wa-warning" class="warning"></p>
       </section>
 
+      <!-- Results: Final Pressures -->
       <section class="results">
-        <h2>Lower Surface (Windward)</h2>
+        <h2>Final Pressures</h2>
         <div class="results-table">
-          <div class="row"><div class="label">Deflection (δ + α)</div><div class="value" id="wa-theta-lower">–</div></div>
           <div class="row"><div class="label">P_lower / P₁</div><div class="value" id="wa-p-lower-p1">–</div></div>
-        </div>
-      </section>
-
-      <section class="results">
-        <h2>Upper Surface (Leeward)</h2>
-        <div class="results-table">
-          <div class="row"><div class="label">Angle (δ - α)</div><div class="value" id="wa-theta-upper">–</div></div>
-          <div class="row"><div class="label">Type</div><div class="value" id="wa-type-upper">–</div></div>
           <div class="row"><div class="label">P_upper / P₁</div><div class="value" id="wa-p-upper-p1">–</div></div>
         </div>
       </section>
+
+      <!-- Diagram -->
+      <section class="diagram-section">
+        <h2>Wave Geometry</h2>
+        <svg id="wa-diagram" width="640" height="400" viewBox="0 0 640 400"></svg>
+      </section>
+
+      <!-- Results: Intermediate Steps -->
+      <section class="results">
+        <h2>Intermediate Steps (Lower Surface)</h2>
+        <div class="results-table">
+          <div class="row"><div class="label">Type</div><div class="value" id="wa-type-lower">Shock</div></div>
+          <div class="row"><div class="label">Deflection θ_lower (δ + α)</div><div class="value" id="wa-theta-lower">–</div></div>
+          <div class="row"><div class="label">Shock Angle β_lower</div><div class="value" id="wa-beta-lower">–</div></div>
+          <div class="row"><div class="label">M₁ₙ</div><div class="value" id="wa-m1n-lower">–</div></div>
+          <div class="row"><div class="label">M₂</div><div class="value" id="wa-m2-lower">–</div></div>
+        </div>
+      </section>
+      
+      <section class="results">
+        <h2>Intermediate Steps (Upper Surface)</h2>
+        <!-- Shock Table -->
+        <div class="results-table" id="wa-results-upper-shock">
+          <div class="row"><div class="label">Type</div><div class="value" id="wa-type-upper-shock">Shock</div></div>
+          <div class="row"><div class="label">Deflection θ_upper (δ - α)</div><div class="value" id="wa-theta-upper-shock">–</div></div>
+          <div class="row"><div class="label">Shock Angle β_upper</div><div class="value" id="wa-beta-upper">–</div></div>
+          <div class="row"><div class="label">M₁ₙ</div><div class="value" id="wa-m1n-upper">–</div></div>
+          <div class="row"><div class="label">M₂</div><div class="value" id="wa-m2-upper-shock">–</div></div>
+        </div>
+        <!-- Expansion Table -->
+        <div class="results-table" id="wa-results-upper-exp">
+          <div class="row"><div class="label">Type</div><div class="value" id="wa-type-upper-exp">Expansion</div></div>
+          <div class="row"><div class="label">Expansion Angle θ_upper (α - δ)</div><div class="value" id="wa-theta-upper-exp">–</div></div>
+          <div class="row"><div class="label">ν(M₁)</div><div class="value" id="wa-nu1-upper">–</div></div>
+          <div class="row"><div class="label">ν(M₂)</div><div class="value" id="wa-nu2-upper">–</div></div>
+          <div class="row"><div class="label">M₂</div><div class="value" id="wa-m2-upper-exp">–</div></div>
+        </div>
+         <!-- Aligned Table -->
+         <div class="results-table" id="wa-results-upper-aligned">
+          <div class="row"><div class="label">Type</div><div class="value" id="wa-type-upper-aligned">Aligned Flow</div></div>
+          <div class="row"><div class="label">Deflection Angle (δ - α)</div><div class="value">0.00</div></div>
+          <div class="row"><div class="label">M₂</div><div class="value" id="wa-m2-upper-aligned">–</div></div>
+        </div>
+      </section>
+
     </section>
 
   </main>

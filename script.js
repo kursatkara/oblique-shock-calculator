@@ -76,7 +76,8 @@ const isentropic = {
   M_from_A: (A_Astar, g, supersonic = false) => {
     if (A_Astar < 1) return NaN;
     if (A_Astar === 1) return 1;
-    // Use a better guess: M ≈ 1/A* for subsonic, M ≈ 1 + 0.5(A/A*) for supersonic
+    // FIX: Subsonic guess was converging to supersonic root.
+    // M_sub ≈ 1/A_Astar is a much better guess.
     const guess = supersonic ? (1 + 0.5 * A_Astar) : (1 / (A_Astar**0.5));
     return newtonRaphson(isentropic.A_Astar_func, isentropic.A_Astar_deriv, guess, A_Astar, g);
   }
@@ -264,7 +265,6 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-wedgeRamp").setAttribute("x2", x0 + Lwedge * Math.cos(thetaRad));
     document.getElementById("ob-wedgeRamp").setAttribute("y2", y0 - Lwedge * Math.sin(thetaRad));
     document.getElementById("ob-thetaArc").setAttribute("d", arcPath(x0, y0, 40, 0, thetaRad));
-    // Updated position to be further right
     document.getElementById("ob-thetaLabel").setAttribute("x", x0 + 135 * Math.cos(thetaRad / 2));
     document.getElementById("ob-thetaLabel").setAttribute("y", y0 - 135 * Math.sin(thetaRad / 2));
     document.getElementById("ob-thetaLabel").textContent = `θ=${thetaDeg.toFixed(1)}°`;
@@ -281,11 +281,78 @@ function updateObliqueDiagram(thetaDeg, betaDeg) {
     document.getElementById("ob-shockLine").setAttribute("x2", x0 + Lshock * Math.cos(betaRad));
     document.getElementById("ob-shockLine").setAttribute("y2", y0 - Lshock * Math.sin(betaRad));
     document.getElementById("ob-betaArc").setAttribute("d", arcPath(x0, y0, 60, 0, betaRad));
-    // Updated position to be further right
     document.getElementById("ob-betaLabel").setAttribute("x", x0 + 160 * Math.cos(betaRad / 2));
     document.getElementById("ob-betaLabel").setAttribute("y", y0 - 160 * Math.sin(betaRad / 2));
     document.getElementById("ob-betaLabel").textContent = `β=${betaDeg.toFixed(1)}°`;
   }
+}
+
+/**
+ * NEW: Draws the wedge airfoil diagram.
+ * All angles in radians for drawing.
+ */
+function updateWedgeDiagram(g, M1, delta, alpha, lower, upper) {
+    const svg = document.getElementById("wa-diagram");
+    svg.innerHTML = ''; // Clear previous drawing
+    
+    const x0 = 320, y0 = 200; // Center origin
+    const L = 250; // Length of lines
+
+    const deltaRad = deg2rad(delta);
+    const alphaRad = deg2rad(alpha);
+
+    // --- Draw Wedge Body ---
+    // Upper surface of wedge
+    svg.innerHTML += `<line x1="${x0}" y1="${y0}" x2="${x0 + L * Math.cos(deltaRad)}" y2="${y0 - L * Math.sin(deltaRad)}" stroke="var(--accent)" stroke-width="4" />`;
+    // Lower surface of wedge
+    svg.innerHTML += `<line x1="${x0}" y1="${y0}" x2="${x0 + L * Math.cos(-deltaRad)}" y2="${y0 - L * Math.sin(-deltaRad)}" stroke="var(--accent)" stroke-width="4" />`;
+    // 0-degree horizontal (wedge centerline)
+    svg.innerHTML += `<line x1="${x0}" y1="${y0}" x2="${x0 + L}" y2="${y0}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="4" />`;
+
+    // --- Draw Freestream M1 ---
+    // This line is at angle alpha relative to the horizontal
+    svg.innerHTML += `<line x1="${x0 - L}" y1="${y0 + L * Math.tan(alphaRad)}" x2="${x0}" y2="${y0}" stroke="var(--text-main)" stroke-width="3" marker-end="url(#arrow)" />`;
+    svg.innerHTML += `<text x="${x0 - L/2}" y="${y0 + L/2 * Math.tan(alphaRad) - 15}" fill="var(--text-main)" font-size="16">M₁</text>`;
+
+    // --- Draw Angle of Attack (α) Arc ---
+    if (alpha !== 0) {
+        svg.innerHTML += `<path d="${arcPath(x0, y0, L/4, 0, alphaRad)}" stroke="var(--text-muted)" stroke-width="2" fill="none" />`;
+        svg.innerHTML += `<text x="${x0 + L/4 + 15}" y="${y0 - L/4 * Math.tan(alphaRad/2) - 10}" fill="var(--text-muted)" font-size="14" text-anchor="start">α=${alpha.toFixed(1)}°</text>`;
+    }
+
+    // --- Draw Lower Wave (Shock) ---
+    if (lower.beta) {
+        const betaLowerRad = deg2rad(lower.beta);
+        // Shock angle is relative to freestream, so we subtract beta from alpha
+        const shockAbsAngle = alphaRad - betaLowerRad;
+        svg.innerHTML += `<line x1="${x0}" y1="${y0}" x2="${x0 + L * Math.cos(shockAbsAngle)}" y2="${y0 - L * Math.sin(shockAbsAngle)}" stroke="var(--danger)" stroke-width="3" />`;
+    }
+
+    // --- Draw Upper Wave (Shock, Expansion, or None) ---
+    if (upper.type === "Shock") {
+        const betaUpperRad = deg2rad(upper.beta);
+        // Shock angle is relative to freestream, so we add beta to alpha
+        const shockAbsAngle = alphaRad + betaUpperRad;
+        svg.innerHTML += `<line x1="${x0}" y1="${y0}" x2="${x0 + L * Math.cos(shockAbsAngle)}" y2="${y0 - L * Math.sin(shockAbsAngle)}" stroke="var(--danger)" stroke-width="3" />`;
+    } else if (upper.type === "Expansion") {
+        const mu1 = Math.asin(1/M1);
+        // First fan line starts at Mach angle relative to freestream
+        const firstFanAngle = alphaRad + mu1;
+        
+        const M2 = upper.M2;
+        const mu2 = M2 === Infinity ? 0 : Math.asin(1/M2);
+        // Last fan line ends at Mach angle relative to final flow direction (which is parallel to upper wedge surface)
+        const flowAngleAfter = deg2rad(delta);
+        const lastFanAngle = flowAngleAfter + mu2;
+
+        const midFanAngle = (firstFanAngle + lastFanAngle) / 2;
+        
+        // Draw 3 lines for the fan
+        svg.innerHTML += `<line x1="${x0}" y1="${y0}" x2="${x0 + L * Math.cos(firstFanAngle)}" y2="${y0 - L * Math.sin(firstFanAngle)}" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="5 3" />`;
+        svg.innerHTML += `<line x1="${x0}" y1="${y0}" x2="${x0 + L * Math.cos(midFanAngle)}" y2="${y0 - L * Math.sin(midFanAngle)}" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="5 3" />`;
+        svg.innerHTML += `<line x1="${x0}" y1="${y0}" x2="${x0 + L * Math.cos(lastFanAngle)}" y2="${y0 - L * Math.sin(lastFanAngle)}" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="5 3" />`;
+    }
+    // If "Aligned", do nothing (M1 line is already parallel to upper surface).
 }
 
 // ========================================================================
@@ -558,9 +625,13 @@ function calculateWedgeAirfoil() {
     const warning = document.getElementById("wa-warning");
     warning.textContent = "";
 
-    const lowerResultIDs = ["wa-theta-lower", "wa-p-lower-p1"];
-    const upperResultIDs = ["wa-theta-upper", "wa-type-upper", "wa-p-upper-p1"];
-    
+    const lowerResultIDs = ["wa-theta-lower", "wa-p-lower-p1", "wa-beta-lower", "wa-m1n-lower", "wa-m2-lower"];
+    const upperShockResultIDs = ["wa-theta-upper-shock", "wa-beta-upper", "wa-m1n-upper", "wa-m2-upper-shock"];
+    const upperExpResultIDs = ["wa-theta-upper-exp", "wa-nu1-upper", "wa-nu2-upper", "wa-m2-upper-exp"];
+    const upperAlignedResultIDs = ["wa-m2-upper-aligned"];
+
+    let lowerResults = {}, upperResults = {};
+
     try {
         if (isNaN(M1) || M1 <= 1) throw new Error("M₁ must be > 1.");
         if (isNaN(delta)) throw new Error("Wedge Half-Angle (δ) must be a number.");
@@ -569,33 +640,55 @@ function calculateWedgeAirfoil() {
         // --- Lower Surface (Compression) ---
         const theta_lower = delta + alpha;
         if (theta_lower < 0) {
-            throw new Error("Lower surface is expanding (δ + α < 0). This calculator only supports attached compression.");
+            // This case (e.g., negative alpha > delta) becomes an expansion.
+            // For simplicity, we'll throw an error, as problem implies compression.
+            throw new Error("Lower surface has negative deflection (δ + α < 0). This case is not supported.");
         }
         const beta_lower_rad = ob_beta_from_M1_theta(M1, theta_lower, g);
         if (isNaN(beta_lower_rad)) {
             throw new Error("Lower surface shock is detached (θ_lower > θ_max).");
         }
-        const { p2p1: p_lower_p1 } = obliqueShockRatios(M1, beta_lower_rad, deg2rad(theta_lower), g);
+        const { p2p1: p_lower_p1, Mn1: m1n_lower, M2: m2_lower } = obliqueShockRatios(M1, beta_lower_rad, deg2rad(theta_lower), g);
         
-        updateText("wa-theta-lower", theta_lower, 2);
+        lowerResults = { type: "Shock", theta: theta_lower, beta: rad2deg(beta_lower_rad), M1n: m1n_lower, M2: m2_lower, p_p1: p_lower_p1 };
+        
         updateText("wa-p-lower-p1", p_lower_p1, 4);
+        updateText("wa-theta-lower", theta_lower, 2);
+        updateText("wa-beta-lower", lowerResults.beta, 2);
+        updateText("wa-m1n-lower", m1n_lower, 3);
+        updateText("wa-m2-lower", m2_lower, 3);
+
 
         // --- Upper Surface (Compression or Expansion) ---
         const theta_eff = delta - alpha;
         let p_upper_p1;
 
         if (theta_eff > 0) {
-            // Compression
+            // Case 1/2: Compression
+            setVisible("wa-results-upper-shock", true);
+            setVisible("wa-results-upper-exp", false);
+            setVisible("wa-results-upper-aligned", false);
+
             const beta_upper_rad = ob_beta_from_M1_theta(M1, theta_eff, g);
             if (isNaN(beta_upper_rad)) {
                 throw new Error("Upper surface shock is detached (θ_upper > θ_max).");
             }
-            const { p2p1 } = obliqueShockRatios(M1, beta_upper_rad, deg2rad(theta_eff), g);
+            const { p2p1, Mn1: m1n_upper, M2: m2_upper } = obliqueShockRatios(M1, beta_upper_rad, deg2rad(theta_eff), g);
             p_upper_p1 = p2p1;
-            updateText("wa-theta-upper", theta_eff, 2);
-            updateText("wa-type-upper", "Shock", 0);
+            
+            upperResults = { type: "Shock", theta: theta_eff, beta: rad2deg(beta_upper_rad), M1n: m1n_upper, M2: m2_upper, p_p1: p_upper_p1 };
+            
+            updateText("wa-theta-upper-shock", theta_eff, 2);
+            updateText("wa-beta-upper", upperResults.beta, 2);
+            updateText("wa-m1n-upper", m1n_upper, 3);
+            updateText("wa-m2-upper-shock", m2_upper, 3);
+
         } else if (theta_eff < 0) {
-            // Expansion
+            // Case 4: Expansion
+            setVisible("wa-results-upper-shock", false);
+            setVisible("wa-results-upper-exp", true);
+            setVisible("wa-results-upper-aligned", false);
+
             const theta_exp = -theta_eff;
             const nu1 = prandtlMeyer.nu(M1, g);
             const nu2 = nu1 + theta_exp;
@@ -605,22 +698,37 @@ function calculateWedgeAirfoil() {
             }
             const M2_upper = prandtlMeyer.M_from_nu(nu2, g);
             p_upper_p1 = isentropic.p0_p(M1, g) / isentropic.p0_p(M2_upper, g);
-            updateText("wa-theta-upper", theta_exp, 2);
-            updateText("wa-type-upper", "Expansion", 0);
+
+            upperResults = { type: "Expansion", theta: theta_exp, nu1: nu1, nu2: nu2, M2: M2_upper, p_p1: p_upper_p1 };
+
+            updateText("wa-theta-upper-exp", theta_exp, 2);
+            updateText("wa-nu1-upper", nu1, 2);
+            updateText("wa-nu2-upper", nu2, 2);
+            updateText("wa-m2-upper-exp", M2_upper, 3);
         } else {
-            // theta_eff = 0
+            // Case 3: Aligned Flow
+            setVisible("wa-results-upper-shock", false);
+            setVisible("wa-results-upper-exp", false);
+            setVisible("wa-results-upper-aligned", true);
+
             p_upper_p1 = 1.0;
-            updateText("wa-theta-upper", 0, 2);
-            updateText("wa-type-upper", "Aligned", 0);
+            upperResults = { type: "Aligned", theta: 0, M2: M1, p_p1: 1.0 };
+            updateText("wa-m2-upper-aligned", M1, 3);
         }
         
         updateText("wa-p-upper-p1", p_upper_p1, 4);
+        
         flashResults("wedge-airfoil");
+        updateWedgeDiagram(g, M1, delta, alpha, lowerResults, upperResults);
 
     } catch (err) {
         warning.textContent = err.message;
-        clearResults("wa", lowerResultIDs);
-        clearResults("wa", upperResultIDs);
+        clearResults("wa", ["p-lower-p1", ...lowerResultIDs]);
+        clearResults("wa", ["p-upper-p1"]);
+        setVisible("wa-results-upper-shock", false);
+        setVisible("wa-results-upper-exp", false);
+        setVisible("wa-results-upper-aligned", false);
+        document.getElementById("wa-diagram").innerHTML = ''; // Clear diagram
     }
 }
 

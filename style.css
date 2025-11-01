@@ -321,12 +321,12 @@ button:hover {
     background: transparent;
     border-color: var(--text-muted); /* Use border-color instead of border */
     color: var(--text-muted);
-    flex-grow: 1; /* Changed from 1 */
+    flex-grow: 1;
 }
 .button-group .btn-primary {
     margin-top: 0;
     border-color: var(--accent); /* Use border-color */
-    flex-grow: 1; /* Changed from 2 */
+    flex-grow: 1;
 }
 
 .warning {
@@ -400,6 +400,12 @@ button:hover {
   }
 }
 
+/* --- Wedge Airfoil Specific --- */
+#wa-results-upper-shock,
+#wa-results-upper-exp,
+#wa-results-upper-aligned {
+  display: none; /* JS will show the correct one */
+}
 
 /* --- Diagrams --- */
 .diagram-section {
@@ -411,7 +417,7 @@ svg {
   height: auto;
   margin-top: 1rem;
 }
-#ob-shockDiagram {
+#ob-shockDiagram, #wa-diagram {
   margin-top: 0; /* Position diagram just under title */
 }
 svg text {
