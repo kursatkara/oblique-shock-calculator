@@ -368,9 +368,28 @@ button:hover {
   animation: flash-row 0.8s ease-out;
 }
 @keyframes flash-row {
-  0% { background-color: var(--accent-bg); }
-  30% { background-color: var(--accent-bg); }
-  100% { background-color: transparent; }
+  0% { 
+    background-color: var(--accent-flash);
+  }
+  30% { 
+    background-color: var(--accent-flash);
+  }
+  100% { 
+    background-color: transparent;
+  }
+  /* Ensure text color is readable during flash */
+  0% .label, 30% .label {
+    color: var(--card-flash);
+  }
+  0% .value, 30% .value {
+    color: var(--card-flash);
+  }
+  100% .label {
+    color: var(--text-muted);
+  }
+  100% .value {
+    color: var(--accent);
+  }
 }
 
 
@@ -411,3 +430,4 @@ footer {
   max-width: 760px;
   width: 90%;
 }
+
